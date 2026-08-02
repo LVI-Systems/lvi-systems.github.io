@@ -14,7 +14,7 @@
   --container-bg: #3c3836;
   --label-box-bg: rgba(251, 241, 199, 0.04);
   --clock-bg: #3c3836;
-  
+
   /* Accent Palette */
   --btn-primary: #8ec07c;   /* Green */
   --btn-danger: #cc241d;    /* Red */
@@ -22,7 +22,7 @@
   --btn-cookie-accept: #8ec07c;
   --btn-cookie-decline: transparent;
 
-  --cat-colors: #8ec07c, #458588, #d79921, #cc241d, #3c3836;
+  --cat-colors: #8ec07c, #458588, #d79921, #cc241d, #d3869b;
 
   /* Structural */
   --border: 3px solid #504945;
@@ -97,8 +97,8 @@ body::after {
 .panel-body { padding:24px; color: var(--text-primary); }
 
 .task-list { display:grid; gap:14px; }
-.task-card { 
-  border:var(--border); padding:20px 24px; display:flex; align-items:center; justify-content:space-between; gap:16px; 
+.task-card {
+  border:var(--border); padding:20px 24px; display:flex; align-items:center; justify-content:space-between; gap:16px;
   animation:taskIn .5s cubic-bezier(0.34,1.56,0.64,1) both; transition:all .2s ease; position:relative; background:var(--container-bg); color: var(--text-primary);
   --cat-indicator-color: #8ec07c; /* Default fallback */
 }
@@ -116,9 +116,9 @@ body::after {
 .task-meta { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
 
 /* Task type badge: always container-bg background, varies text/border color */
-.cat-badge { 
-  padding:4px 12px; border:var(--border); font-size:.75rem; font-weight:700; 
-  text-transform:uppercase; letter-spacing:.5px; transition:all .3s ease; 
+.cat-badge {
+  padding:4px 12px; border:var(--border); font-size:.75rem; font-weight:700;
+  text-transform:uppercase; letter-spacing:.5px; transition:all .3s ease;
   background: var(--container-bg) !important;
 }
 .deadline-text { font-family:'Space Mono',monospace; font-size:.78rem; color:var(--text-secondary); }
@@ -144,13 +144,13 @@ body::after {
 .no-tasks-msg p { font-family:'Space Mono',monospace; font-size:.85rem; color:var(--text-secondary); letter-spacing:1px; }
 
 /* ── MODALS (CENTERED & DIMMED) ── */
-.modal-overlay { 
-  position:fixed; inset:0; background:rgba(0,0,0,0.65); z-index:15000; display:flex; align-items:center; justify-content:center; pointer-events:auto; animation:fadeIn .2s ease; 
+.modal-overlay {
+  position:fixed; inset:0; background:rgba(0,0,0,0.65); z-index:15000; display:flex; align-items:center; justify-content:center; pointer-events:auto; animation:fadeIn .2s ease;
 }
 @keyframes fadeIn { from{opacity:0} to{opacity:1} }
 
-.modal-box { 
-  background:var(--container-bg); border:var(--border); box-shadow:var(--shadow-lg), 0 0 50px rgba(0,0,0,.4); padding:24px; width:min(90vw,480px); animation:modalPop .3s cubic-bezier(0.34,1.56,0.64,1) both; color: var(--text-primary); max-height: 85vh; overflow-y: auto; pointer-events:auto; 
+.modal-box {
+  background:var(--container-bg); border:var(--border); box-shadow:var(--shadow-lg), 0 0 50px rgba(0,0,0,.4); padding:24px; width:min(90vw,480px); animation:modalPop .3s cubic-bezier(0.34,1.56,0.64,1) both; color: var(--text-primary); max-height: 85vh; overflow-y: auto; pointer-events:auto;
 }
 @keyframes modalPop { from{opacity:0; transform:scale(.92) translateY(20px)} to{opacity:1; transform:scale(1) translateY(0)} }
 
@@ -204,8 +204,8 @@ select.glass-input { cursor:pointer; appearance:none; -webkit-appearance:none; b
 .btn-timer:hover { transform:translate(-1px,-1px); box-shadow:3px 3px 0 #1d2021; background:#665c54; }
 
 /* ── TIMER MODAL (dynamic) ── */
-.timer-modal-overlay { 
-  position:fixed; inset:0; background:rgba(0,0,0,0.65); z-index:16000; display:flex; align-items:center; justify-content:center; pointer-events:auto; animation:fadeIn .2s ease; 
+.timer-modal-overlay {
+  position:fixed; inset:0; background:rgba(0,0,0,0.65); z-index:16000; display:flex; align-items:center; justify-content:center; pointer-events:auto; animation:fadeIn .2s ease;
 }
 .timer-modal-overlay.hidden { display:none !important; }
 
@@ -248,7 +248,7 @@ select.glass-input { cursor:pointer; appearance:none; -webkit-appearance:none; b
 
 <div class="container">
   <div class="clock-container"><div id="appClock">00:00:00</div></div>
-  
+
   <div class="stats-bar">
     <div class="stat-box"><div class="stat-number" id="totalCount">0</div><div class="stat-label">Total</div></div>
     <div class="stat-box"><div class="stat-number" id="activeCount">0</div><div class="stat-label">Active</div></div>
@@ -309,17 +309,17 @@ const CookieStore = {
   get(key) { if(!CookieStore.isEnabled())return null; const name=`${this.PREFIX}${key}=`; const cookies=document.cookie.split(';'); for(let c of cookies){c=c.trim();if(c.indexOf(name)===0){try{return JSON.parse(decodeURIComponent(c.substring(name.length)));}catch(e){return null;}}} return null; },
   remove(key) { document.cookie=`${this.PREFIX}${key}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; Path=/; SameSite=Lax`; },
   isEnabled() { return localStorage.getItem('tp_cookie_consent')==='true'; },
-  setConsent(granted) { 
-    localStorage.setItem('tp_cookie_consent',String(granted)); 
-    CookieStore.updateStatusUI(); 
+  setConsent(granted) {
+    localStorage.setItem('tp_cookie_consent',String(granted));
+    CookieStore.updateStatusUI();
     if(granted){CookieStore.set('categories',JSON.parse(localStorage.getItem('nb_categories')||'[]'));CookieStore.set('tasks',JSON.parse(localStorage.getItem('nb_tasks')||'[]'));} else{CookieStore.remove('categories');CookieStore.remove('tasks');}
   },
-  updateStatusUI() { 
-    const el=document.getElementById('cookieStatus'),label=document.getElementById('cookieStatusLabel'); 
-    if(!el)return; 
-    const on=CookieStore.isEnabled(); 
-    el.classList.toggle('visible',true); 
-    label.textContent=`Cookies: ${on?'ON':'OFF'}`; 
+  updateStatusUI() {
+    const el=document.getElementById('cookieStatus'),label=document.getElementById('cookieStatusLabel');
+    if(!el)return;
+    const on=CookieStore.isEnabled();
+    el.classList.toggle('visible',true);
+    label.textContent=`Cookies: ${on?'ON':'OFF'}`;
   }
 };
 
@@ -330,7 +330,7 @@ const ModalSystem = {
   overlay: document.getElementById('modalOverlay'),
   boxes: ['taskModal','categoryModal'],
   isOpen: false,
-  
+
   open(id) {
     if(this.isOpen) return;
     this.isOpen = true;
@@ -338,7 +338,7 @@ const ModalSystem = {
     document.getElementById(id).classList.remove('hidden');
     document.body.style.overflow = 'hidden';
   },
-  
+
   close() {
     this.isOpen = false;
     this.overlay.classList.add('hidden');
@@ -502,25 +502,25 @@ function fmtCountdown(ms) {
 
 function fmtDate(dateStr) { const d=new Date(dateStr); return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})+', '+d.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}); }
 
-function updateCategorySelect() { 
+function updateCategorySelect() {
   const sel = document.getElementById('tmTaskCategory');
-  sel.innerHTML='<option value="">— select —</option>'; 
-  categories.forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;sel.appendChild(o);}); 
+  sel.innerHTML='<option value="">— select —</option>';
+  categories.forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;sel.appendChild(o);});
 }
 
 // Fixed Gruvbox category colors
-const CAT_COLORS = ['#8ec07c','#458588','#d79921','#cc241d','#3c3836'];
+const CAT_COLORS = ['#8ec07c', '#458588', '#d79921', '#cc241d', '#d3869b'];
 
 function renderTasks() {
   const now=new Date(), activeCount=tasks.filter(t=>!t.completed && new Date(t.deadline)>now).length;
   const completedCount = tasks.filter(t => t.completed).length;
-  
-  totalCountEl.textContent=tasks.length; 
-  activeCountEl.textContent=activeCount; 
+
+  totalCountEl.textContent=tasks.length;
+  activeCountEl.textContent=activeCount;
   completedCountEl.textContent=completedCount;
 
   if(tasks.length===0){taskListEl.innerHTML=`<div class="no-tasks-msg"><span class="big-icon">//</span><p>No tasks yet. Build something.</p></div>`;return;}
-  
+
   const sorted=[...tasks].sort((a,b)=>{
     if(a.completed !== b.completed) return a.completed ? 1 : -1;
     return new Date(a.deadline)-new Date(b.deadline);
@@ -530,7 +530,7 @@ function renderTasks() {
     const dl=new Date(task.deadline), diff=dl-now, ov=!task.completed && diff<0, sc=ov?'status-overdue':'status-active';
     const catIdx = categories.indexOf(task.category);
     const badgeColor = catIdx >= 0 ? CAT_COLORS[catIdx % 5] : '#8ec07c';
-    
+
     let cdHtml;
     if(ov){cdHtml=`<div class="countdown-display"><div class="countdown-value overdue" data-id="${task.id}" data-type="overdue">${fmtCountdown(Math.abs(diff))}</div><div class="countdown-label overdue">// OVERDUE //</div></div>`;}
     else{cdHtml=`<div class="countdown-display"><div class="countdown-value active" data-id="${task.id}" data-type="active">${fmtCountdown(diff)}</div><div class="countdown-label">// remaining //</div></div>`;}
@@ -565,17 +565,17 @@ function tick() {
   if(clockEl){clockEl.textContent=now.toLocaleTimeString('en-GB',{hour12:false});}
 }
 
-function toggleComplete(id) { 
-  const t=tasks.find(x=>x.id===id); 
-  if(t){t.completed=!t.completed; saveData(); renderTasks(); showToast(`Task ${t.completed?'completed':'reopened'}.`,'info');} 
+function toggleComplete(id) {
+  const t=tasks.find(x=>x.id===id);
+  if(t){t.completed=!t.completed; saveData(); renderTasks(); showToast(`Task ${t.completed?'completed':'reopened'}.`,'info');}
 }
 window._toggleComplete = toggleComplete;
 
-function rmTask(taskId) { 
-  const card=document.querySelector(`.task-card[data-id="${taskId}"]`); 
-  if(card){card.classList.add('removing');setTimeout(()=>{tasks=tasks.filter(t=>t.id!==taskId);saveData();renderTasks();},400);} 
-  else{tasks=tasks.filter(t=>t.id!==taskId);saveData();renderTasks();} 
-  showToast('Task removed.','info'); 
+function rmTask(taskId) {
+  const card=document.querySelector(`.task-card[data-id="${taskId}"]`);
+  if(card){card.classList.add('removing');setTimeout(()=>{tasks=tasks.filter(t=>t.id!==taskId);saveData();renderTasks();},400);}
+  else{tasks=tasks.filter(t=>t.id!==taskId);saveData();renderTasks();}
+  showToast('Task removed.','info');
 }
 window._rmTask = rmTask;
 
@@ -585,10 +585,10 @@ window._rmTask = rmTask;
 let timerModalEl=null;
 function openTimerModal() {
   if(timerModalEl)return;
-  timerModalEl=document.createElement('div'); 
+  timerModalEl=document.createElement('div');
   timerModalEl.className='timer-modal-overlay';
   timerModalEl.innerHTML=`<div class="modal-box" style="width:min(90vw,380px);"><h3>// Set Timer //</h3><input type="text" class="glass-input" id="tmNameInput" placeholder="Timer name (optional)" maxlength="40"><div class="modal-time-row" style="display:flex; gap:8px; align-items:center; justify-content:center; margin-bottom:20px;"><div class="modal-time-group" style="display:flex; flex-direction:column; align-items:center; gap:4px;"><label style="font-size:.7rem; text-transform:uppercase; letter-spacing:1px; color:#928374;">H</label><input type="number" id="tmH" min="0" max="99" value="0" class="glass-input" style="width:60px;"></div><span class="modal-sep" style="font-size:1.5rem; font-weight:700; padding-top:14px;">:</span><div class="modal-time-group" style="display:flex; flex-direction:column; align-items:center; gap:4px;"><label style="font-size:.7rem; text-transform:uppercase; letter-spacing:1px; color:#928374;">M</label><input type="number" id="tmM" min="0" max="59" value="5" class="glass-input" style="width:60px;"></div><span class="modal-sep" style="font-size:1.5rem; font-weight:700; padding-top:14px;">:</span><div class="modal-time-group" style="display:flex; flex-direction:column; align-items:center; gap:4px;"><label style="font-size:.7rem; text-transform:uppercase; letter-spacing:1px; color:#928374;">S</label><input type="number" id="tmS" min="0" max="59" value="0" class="glass-input" style="width:60px;"></div></div><div class="modal-btns"><button class="btn-save" id="tmStartBtn" style="background:#8ec07c;">START</button><button class="btn-cancel" id="tmCancelBtn">CANCEL</button></div></div>`;
-  document.body.appendChild(timerModalEl); 
+  document.body.appendChild(timerModalEl);
   setTimeout(()=>timerModalEl.querySelector('#tmNameInput').focus(),100);
   timerModalEl.querySelector('#tmStartBtn').onclick=()=>{const h=parseInt(document.getElementById('tmH').value)||0,m=parseInt(document.getElementById('tmM').value)||0,s=parseInt(document.getElementById('tmS').value)||0;if(h===0&&m===0&&s===0){showToast('Set a time > 0.','error');return;}const name=document.getElementById('tmNameInput').value.trim();TimerManager.create(h*3600+m*60+s,name||null);closeTimerModal();};
   timerModalEl.querySelector('#tmCancelBtn').onclick=closeTimerModal;
@@ -612,18 +612,18 @@ document.addEventListener('touchend',()=>{if(dragTarget){dragTarget.classList.re
 // ════════════════════════════════════════
 loadData(); CookieStore.updateStatusUI(); showCookieBanner(); renderTasks(); TimerManager.init(); setInterval(tick,1000);
 
-const now=new Date(), pad=n=>String(n).padStart(2,'0'); 
+const now=new Date(), pad=n=>String(n).padStart(2,'0');
 document.getElementById('tmTaskDeadline').min=`${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
 
 // Modal Triggers
-document.getElementById('btnAddTask').addEventListener('click', () => { 
+document.getElementById('btnAddTask').addEventListener('click', () => {
   if(ModalSystem.isOpen) return;
-  updateCategorySelect(); ModalSystem.open('taskModal'); setTimeout(()=>document.getElementById('tmTaskName').focus(), 50); 
+  updateCategorySelect(); ModalSystem.open('taskModal'); setTimeout(()=>document.getElementById('tmTaskName').focus(), 50);
 });
 document.getElementById('btnNewTimer').addEventListener('click', openTimerModal);
-document.getElementById('btnCategories').addEventListener('click', () => { 
+document.getElementById('btnCategories').addEventListener('click', () => {
   if(ModalSystem.isOpen) return;
-  renderCatListInModal(); ModalSystem.open('categoryModal'); setTimeout(()=>document.getElementById('tmCatName').focus(), 50); 
+  renderCatListInModal(); ModalSystem.open('categoryModal'); setTimeout(()=>document.getElementById('tmCatName').focus(), 50);
 });
 
 // Task Modal Save
@@ -642,10 +642,10 @@ function renderCatListInModal() {
   if(categories.length===0){list.innerHTML='<span style="font-family:Space Mono;font-size:.8rem;color:#928374;">// no categories yet //</span>';}
   else{list.innerHTML=categories.map((cat,i)=>`<div class="cat-tag" style="background:${getComputedStyle(document.documentElement).getPropertyValue('--container-bg').trim()}; border-color:${CAT_COLORS[i%5]}; color:${CAT_COLORS[i%5]}; border:var(--border); padding:6px 12px; font-weight:700; font-size:.8rem; display:inline-flex; align-items:center; gap:6px;"><span>${escHtml(cat)}</span><button class="remove-cat" style="width:18px;height:18px;border:var(--border);background:rgba(60,56,54,.3);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.7rem;" onclick="window._rmCatModal('${escAttr(cat)}')">✕</button></div>`).join('');}
 }
-window._rmCatModal = function(catName) { 
-  const hasTasks=tasks.some(t=>t.category===catName); 
+window._rmCatModal = function(catName) {
+  const hasTasks=tasks.some(t=>t.category===catName);
   if(hasTasks){showToast(`Can't remove — "${catName}" has ${tasks.filter(t=>t.category===catName).length} task(s).`,'error');return;}
-  categories=categories.filter(c=>c!==catName); saveData(); renderCatListInModal(); showToast(`"${catName}" removed.`,'info'); 
+  categories=categories.filter(c=>c!==catName); saveData(); renderCatListInModal(); showToast(`"${catName}" removed.`,'info');
 };
 
 document.getElementById('tmAddCatBtn').addEventListener('click', () => {
@@ -660,11 +660,11 @@ document.getElementById('tmCancelTask').addEventListener('click', () => ModalSys
 document.getElementById('tmCloseCatModal').addEventListener('click', () => ModalSystem.close());
 
 // ESC Key Close Only
-document.addEventListener('keydown', e => { 
-  if(e.key === 'Escape') { 
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape') {
     if(timerModalEl) closeTimerModal();
-    else if(!ModalSystem.overlay.classList.contains('hidden')) ModalSystem.close(); 
-  } 
+    else if(!ModalSystem.overlay.classList.contains('hidden')) ModalSystem.close();
+  }
 });
 
 // Cookie Banner Logic

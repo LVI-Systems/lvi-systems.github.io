@@ -97,18 +97,30 @@ body::after {
 .panel-body { padding:24px; color: var(--text-primary); }
 
 .task-list { display:grid; gap:14px; }
-.task-card { border:var(--border); padding:20px 24px; display:flex; align-items:center; justify-content:space-between; gap:16px; animation:taskIn .5s cubic-bezier(0.34,1.56,0.64,1) both; transition:all .2s ease; position:relative; background:var(--container-bg); color: var(--text-primary); }
+.task-card { 
+  border:var(--border); padding:20px 24px; display:flex; align-items:center; justify-content:space-between; gap:16px; 
+  animation:taskIn .5s cubic-bezier(0.34,1.56,0.64,1) both; transition:all .2s ease; position:relative; background:var(--container-bg); color: var(--text-primary);
+  --cat-indicator-color: #8ec07c; /* Default fallback */
+}
 @keyframes taskIn { from { opacity:0; transform:translateX(-30px) scale(.96); } to { opacity:1; transform:translateX(0) scale(1); } }
-.task-card.status-active::before  { content:''; position:absolute; left:0; top:0; bottom:0; width:6px; background:var(--btn-primary); }
+
+/* Category indicator square (left strip) always matches category color */
+.task-card.status-active::before  { content:''; position:absolute; left:0; top:0; bottom:0; width:6px; background: var(--cat-indicator-color); }
 .task-card.status-overdue         { background:#3d2b2b; animation:flashOverdue 1.2s ease-in-out infinite; color: var(--text-primary); }
 @keyframes flashOverdue { 0%,100%{box-shadow:var(--shadow-sm);border-color:#504945} 50%{box-shadow:6px 6px 0 #cc241d, inset 0 0 30px rgba(204,36,29,.15);border-color:#cc241d;} }
-.task-card.status-overdue::before { content:''; position:absolute; left:0; top:0; bottom:0; width:6px; background:var(--btn-danger); }
+.task-card.status-overdue::before { content:''; position:absolute; left:0; top:0; bottom:0; width:6px; background: var(--cat-indicator-color); }
 
 .task-info { flex:1; min-width:0; }
 .task-name { font-size:1.1rem; font-weight:700; margin-bottom:8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color: var(--text-primary); transition: opacity .2s, text-decoration .2s; }
 .task-card.completed .task-name { text-decoration: line-through; opacity: 0.6; }
 .task-meta { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
-.cat-badge { padding:4px 12px; border:var(--border); font-size:.75rem; font-weight:700; text-transform:uppercase; letter-spacing:.5px; transition:background .3s ease, border-color .3s ease; color:#fbf1c7; }
+
+/* Task type badge: always container-bg background, varies text/border color */
+.cat-badge { 
+  padding:4px 12px; border:var(--border); font-size:.75rem; font-weight:700; 
+  text-transform:uppercase; letter-spacing:.5px; transition:all .3s ease; 
+  background: var(--container-bg) !important;
+}
 .deadline-text { font-family:'Space Mono',monospace; font-size:.78rem; color:var(--text-secondary); }
 
 .countdown-display { text-align:center; min-width:160px; }
@@ -516,7 +528,8 @@ function renderTasks() {
 
   taskListEl.innerHTML=sorted.map(task=>{
     const dl=new Date(task.deadline), diff=dl-now, ov=!task.completed && diff<0, sc=ov?'status-overdue':'status-active';
-    const catIdx=categories.indexOf(task.category), badgeColor=catIdx>=0?CAT_COLORS[catIdx%5]:'#8ec07c';
+    const catIdx = categories.indexOf(task.category);
+    const badgeColor = catIdx >= 0 ? CAT_COLORS[catIdx % 5] : '#8ec07c';
     
     let cdHtml;
     if(ov){cdHtml=`<div class="countdown-display"><div class="countdown-value overdue" data-id="${task.id}" data-type="overdue">${fmtCountdown(Math.abs(diff))}</div><div class="countdown-label overdue">// OVERDUE //</div></div>`;}
@@ -525,11 +538,11 @@ function renderTasks() {
     const completeClass = task.completed ? 'checked' : '';
     const checkIcon = task.completed ? '✓' : '';
 
-    return `<div class="task-card ${sc} ${task.completed?'completed':''}" data-id="${task.id}">
+    return `<div class="task-card ${sc} ${task.completed?'completed':''}" data-id="${task.id}" style="--cat-indicator-color:${badgeColor};">
       <div class="complete-toggle ${completeClass}" onclick="window._toggleComplete('${task.id}')">${checkIcon}</div>
       <div class="task-info">
         <div class="task-name" title="${escHtml(task.name)}">${escHtml(task.name)}</div>
-        <div class="task-meta"><span class="cat-badge" style="background:${badgeColor}">${escHtml(task.category)}</span><span class="deadline-text">${fmtDate(task.deadline)}</span></div>
+        <div class="task-meta"><span class="cat-badge" style="border-color:${badgeColor}; color:${badgeColor};">${escHtml(task.category)}</span><span class="deadline-text">${fmtDate(task.deadline)}</span></div>
       </div>${cdHtml}<div class="task-actions"><button class="btn-danger" onclick="window._rmTask('${task.id}')">REMOVE</button></div></div>`;
   }).join('');
 }
@@ -627,7 +640,7 @@ document.getElementById('tmSaveTask').addEventListener('click', () => {
 function renderCatListInModal() {
   const list = document.getElementById('tmCatList');
   if(categories.length===0){list.innerHTML='<span style="font-family:Space Mono;font-size:.8rem;color:#928374;">// no categories yet //</span>';}
-  else{list.innerHTML=categories.map((cat,i)=>`<div class="cat-tag" style="background:${CAT_COLORS[i%5]}; border:var(--border); padding:6px 12px; font-weight:700; font-size:.8rem; display:inline-flex; align-items:center; gap:6px;"><span>${escHtml(cat)}</span><button class="remove-cat" style="width:18px;height:18px;border:var(--border);background:rgba(60,56,54,.3);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.7rem;" onclick="window._rmCatModal('${escAttr(cat)}')">✕</button></div>`).join('');}
+  else{list.innerHTML=categories.map((cat,i)=>`<div class="cat-tag" style="background:${getComputedStyle(document.documentElement).getPropertyValue('--container-bg').trim()}; border-color:${CAT_COLORS[i%5]}; color:${CAT_COLORS[i%5]}; border:var(--border); padding:6px 12px; font-weight:700; font-size:.8rem; display:inline-flex; align-items:center; gap:6px;"><span>${escHtml(cat)}</span><button class="remove-cat" style="width:18px;height:18px;border:var(--border);background:rgba(60,56,54,.3);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.7rem;" onclick="window._rmCatModal('${escAttr(cat)}')">✕</button></div>`).join('');}
 }
 window._rmCatModal = function(catName) { 
   const hasTasks=tasks.some(t=>t.category===catName); 

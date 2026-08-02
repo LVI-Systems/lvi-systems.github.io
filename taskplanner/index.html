@@ -547,22 +547,39 @@ function renderTasks() {
   }).join('');
 }
 
+// ── Lightweight per-second tick (NO full re-render) ──
 function tick() {
   const now=new Date();
-  tasks.forEach(task=>{
-    if(task.completed) return;
-    const card=document.querySelector(`.task-card[data-id="${task.id}"]`); if(!card)return;
-    const dl=new Date(task.deadline), diff=dl-now, ov=diff<0;
-    card.classList.remove('status-active','status-overdue'); card.classList.add(ov?'status-overdue':'status-active');
-    const cdEl=card.querySelector('.countdown-value');
-    if(cdEl){if(ov){cdEl.textContent=fmtCountdown(Math.abs(diff));cdEl.className='countdown-value overdue';}else{cdEl.textContent=fmtCountdown(diff);cdEl.className='countdown-value active';}}
-    const lbl=card.querySelector('.countdown-label'); if(lbl){lbl.classList.toggle('overdue',ov);lbl.textContent=ov?'// OVERDUE //':'// remaining //';}
+
+  // Update each task card in-place (no DOM recreation)
+  tasks.forEach(task => {
+    if (task.completed) return;
+    const card = document.querySelector(`.task-card[data-id="${task.id}"]`);
+    if (!card) return;
+
+    const dl = new Date(task.deadline), diff = dl - now, ov = diff < 0;
+
+    // Toggle status class without recreating the element
+    card.classList.remove('status-active', 'status-overdue');
+    card.classList.add(ov ? 'status-overdue' : 'status-active');
+
+    const cdEl = card.querySelector('.countdown-value');
+    if (cdEl) {
+      cdEl.textContent = fmtCountdown(Math.abs(diff));
+      cdEl.className = `countdown-value ${ov ? 'overdue' : 'active'}`;
+    }
+
+    const lbl = card.querySelector('.countdown-label');
+    if (lbl) {
+      lbl.classList.toggle('overdue', ov);
+      lbl.textContent = ov ? '// OVERDUE //' : '// remaining //';
+    }
   });
-  renderTasks();
+
   TimerManager.update();
 
-  const clockEl=document.getElementById('appClock');
-  if(clockEl){clockEl.textContent=now.toLocaleTimeString('en-GB',{hour12:false});}
+  const clockEl = document.getElementById('appClock');
+  if (clockEl) clockEl.textContent = now.toLocaleTimeString('en-GB', { hour12: false });
 }
 
 function toggleComplete(id) {

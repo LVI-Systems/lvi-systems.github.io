@@ -48,7 +48,7 @@ z-index: -1;
 
 .container { max-width: 1100px; margin: 0 auto; padding: 30px 20px 60px; position: relative; z-index: 1; }
 
-/* ── HEADER ── */
+/* ── HEADER & CLOCK ── */
 .header { text-align: center; margin-bottom: 40px; animation: slideDown 0.6s cubic-bezier(0.34,1.56,0.64,1) both; }
 @keyframes slideDown { from { opacity:0; transform:translateY(-40px); } to { opacity:1; transform:translateY(0); } }
 
@@ -59,6 +59,14 @@ box-shadow:var(--shadow-lg); position:relative; line-height:1.1;
 }
 .header h1::after { content:''; position:absolute; bottom:-8px; right:-8px; width:100%; height:100%; border:var(--border); z-index:-1; background:transparent; }
 .header-sub { margin-top:16px; font-family:'Space Mono',monospace; font-size:.85rem; letter-spacing:3px; text-transform:uppercase; color:#666; }
+
+.clock-container { text-align: center; margin-bottom: 30px; animation: slideDown 0.6s cubic-bezier(0.34,1.56,0.64,1) .1s both; }
+#appClock {
+font-family:'Space Mono',monospace; font-size:2.8rem; font-weight:700; letter-spacing:-1px;
+display:inline-block; background:var(--white); border:var(--border); padding:14px 36px;
+box-shadow:var(--shadow-lg); position:relative; line-height:1; user-select:none;
+}
+#appClock::after { content:''; position:absolute; bottom:-8px; right:-8px; width:100%; height:100%; border:var(--border); z-index:-1; background:transparent; }
 
 /* ── STATS BAR ── */
 .stats-bar { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:30px; animation:slideUp 0.6s cubic-bezier(0.34,1.56,0.64,1) .15s both; }
@@ -148,7 +156,6 @@ select.glass-input option { background:#f8f6f2; color:var(--black); border:none;
 .task-list { display:grid; gap:14px; }
 .task-card { border:var(--border); padding:20px 24px; display:flex; align-items:center; justify-content:space-between; gap:16px; animation:taskIn .5s cubic-bezier(0.34,1.56,0.64,1) both; transition:all .2s ease; position:relative; background:var(--white); }
 @keyframes taskIn { from { opacity:0; transform:translateX(-30px) scale(.96); } to { opacity:1; transform:translateX(0) scale(1); } }
-.task-card:hover { transform:translate(-2px,-2px); box-shadow:var(--shadow-sm); }
 .task-card.status-active::before { content:''; position:absolute; left:0; top:0; bottom:0; width:6px; background:var(--blue); }
 .task-card.status-overdue { background:#fff5f5; animation:flashOverdue 1.2s ease-in-out infinite; }
 @keyframes flashOverdue { 0%,100%{box-shadow:var(--shadow-sm);border-color:var(--black)} 50%{box-shadow:6px 6px 0 var(--red), inset 0 0 30px rgba(255,71,87,.08);border-color:var(--red);} }
@@ -182,23 +189,12 @@ select.glass-input option { background:#f8f6f2; color:var(--black); border:none;
 @keyframes toastOut { to { opacity:0; transform:translateX(80px) scale(.95); } }
 
 /* ── GRID LINES (visual indicators) ── */
-.grid-line {
-position:fixed; z-index:7000; pointer-events:none;
-}
-.grid-line--vertical {
-width:2px; top:0; bottom:0;
-background: repeating-linear-gradient(180deg, rgba(26,26,26,.08) 0px, rgba(26,26,26,.08) 4px, transparent 4px, transparent 10px);
-}
-.grid-line--horizontal {
-height:2px; left:0; right:0;
-background: repeating-linear-gradient(90deg, rgba(26,26,26,.05) 0px, rgba(26,26,26,.05) 4px, transparent 4px, transparent 10px);
-}
+.grid-line { position:fixed; z-index:7000; pointer-events:none; }
+.grid-line--vertical { width:2px; top:0; bottom:0; background: repeating-linear-gradient(180deg, rgba(26,26,26,.08) 0px, rgba(26,26,26,.08) 4px, transparent 4px, transparent 10px); }
+.grid-line--horizontal { height:2px; left:0; right:0; background: repeating-linear-gradient(90deg, rgba(26,26,26,.05) 0px, rgba(26,26,26,.05) 4px, transparent 4px, transparent 10px); }
 
 /* ── TIMER WINDOWS ── */
-.timer-window {
-position:fixed; width:170px; background:var(--white); border:var(--border); box-shadow:var(--shadow-sm);
-z-index:8000; user-select:none; transition:box-shadow .2s ease, left .35s cubic-bezier(0.34,1.56,0.64,1), top .35s cubic-bezier(0.34,1.56,0.64,1);
-}
+.timer-window { position:fixed; width:170px; background:var(--white); border:var(--border); box-shadow:var(--shadow-sm); z-index:8000; user-select:none; transition:box-shadow .2s ease, left .35s cubic-bezier(0.34,1.56,0.64,1), top .35s cubic-bezier(0.34,1.56,0.64,1); }
 .timer-window.dragging { cursor:grabbing; box-shadow: var(--shadow-lg); z-index:9500; transition: none; }
 .timer-header { padding:8px 12px; background:var(--yellow); border-bottom:var(--border); font-weight:700; font-size:.8rem; text-transform:uppercase; letter-spacing:1px; cursor:grab; display:flex; justify-content:space-between; align-items:center; }
 .timer-header:active { cursor:grabbing; }
@@ -239,6 +235,7 @@ z-index:8000; user-select:none; transition:box-shadow .2s ease, left .35s cubic-
 
 @media (max-width:768px) {
 .header h1 { font-size:2rem; padding:12px 24px; }
+#appClock { font-size:2rem; padding:10px 20px; }
 .stats-bar { grid-template-columns:repeat(3,1fr); gap:8px; }
 .stat-box { padding:12px 10px; }
 .stat-number { font-size:1.6rem; }
@@ -282,6 +279,7 @@ z-index:8000; user-select:none; transition:box-shadow .2s ease, left .35s cubic-
 
 <div class="container">
 <div class="header"><h1>Task<br>Planner</h1><p class="header-sub">// organize with intention //</p></div>
+<div class="clock-container" id="appClock">00:00:00</div>
 <div class="stats-bar">
 <div class="stat-box"><div class="stat-number" id="totalCount">0</div><div class="stat-label">Total</div></div>
 <div class="stat-box"><div class="stat-number" id="activeCount">0</div><div class="stat-label">Active</div></div>
@@ -361,14 +359,12 @@ notifyTaskAdded(name, category) { this.send(`✅ New Task: ${name}`,`Category: $
 const TimerManager = {
 timers: [], containerId: 'timerContainer',
 
-// Grid configuration — fixed at startup, never changes during runtime
 TIMER_W: 170,
 TIMER_H: 155,
-GAP_Y: 20,       // vertical gap between rows
-COL_PAD: 30,     // horizontal padding from viewport edge to grid column
-ROW_START: 90,   // Y offset from top for first row
+GAP_Y: 20,
+COL_PAD: 30,
+ROW_START: 90,
 
-// Pre-computed grid slots (set once at startup)
 gridSlots: [],
 
 init() {
@@ -376,45 +372,33 @@ this.computeGrid();
 this.render();
 },
 
-/** Compute the entire grid matrix based on current viewport dimensions. */
 computeGrid() {
 const vw = window.innerWidth;
 const vh = window.innerHeight;
 
-// Two columns: left and right, positioned in the viewport margins
 const leftX = this.COL_PAD;
 const rightX = vw - this.TIMER_W - this.COL_PAD;
 
-// Calculate how many rows fit vertically
 const usableHeight = vh - this.ROW_START - this.COL_PAD;
 const maxRows = Math.max(1, Math.floor((usableHeight + this.GAP_Y) / (this.TIMER_H + this.GAP_Y)));
 
 this.gridSlots = [];
 
-// Right column slots (bottom row first → top row last for fill order)
 for (let r = 0; r < maxRows; r++) {
 this.gridSlots.push({ x: rightX, y: this.ROW_START + r * (this.TIMER_H + this.GAP_Y), col: 'right', row: r });
 }
 
-// Left column slots (bottom row first → top row last for fill order)
 for (let r = 0; r < maxRows; r++) {
 this.gridSlots.push({ x: leftX, y: this.ROW_START + r * (this.TIMER_H + this.GAP_Y), col: 'left', row: r });
 }
 
-// Render grid lines for visual reference
 renderGridLines(leftX, rightX);
 },
 
-/** Total number of available grid slots. */
 get totalSlots() { return this.gridSlots.length; },
-
-/** Number of occupied slots (one per timer). */
 get occupiedCount() { return this.timers.length; },
-
-/** Check if all grid slots are filled. */
 isGridFull() { return this.occupiedCount >= this.totalSlots; },
 
-/** Find the next free slot index, or -1 if full. */
 nextFreeSlotIndex() {
 const occupied = new Set();
 this.timers.forEach(t => {
@@ -433,7 +417,6 @@ if (!occupied.has(i)) return i;
 return -1;
 },
 
-/** Snap a raw pixel position to the nearest grid slot. */
 snapToGrid(x, y) {
 let bestIdx = 0, bestDist = Infinity;
 this.gridSlots.forEach((s, i) => {
@@ -444,8 +427,6 @@ if (dx + dy < bestDist) { bestDist = dx + dy; bestIdx = i; }
 return this.gridSlots[bestIdx];
 },
 
-/* ── CREATE / REMOVE / TOGGLE ─────────── */
-
 create(durationSec, name) {
 if (this.isGridFull()) {
 showToast('All grid slots are full. Remove a timer first.', 'error');
@@ -454,7 +435,6 @@ return;
 
 const id = Date.now().toString(36) + Math.random().toString(36).substr(2,4);
 
-// Place in next free grid slot
 const idx = this.nextFreeSlotIndex();
 let x = 0, y = 0;
 if (idx >= 0) {
@@ -479,7 +459,6 @@ this.render();
 },
 
 remove(id) {
-// Remove from data array
 this.timers = this.timers.filter(x=>x.id!==id);
 
 const el = document.getElementById(`timer-${id}`);
@@ -490,7 +469,6 @@ el.style.transform='scale(.8)';
 setTimeout(()=>el.remove(), 300);
 }
 
-// Re-render DOM to remove the element completely after animation
 this.render();
 },
 
@@ -500,11 +478,8 @@ if(newName.trim()) t.name = newName.trim(); else t.name = `Timer ${this.timers.i
 this.render();
 },
 
-/* ── RENDER DOM ───────────────────────── */
-
 render() {
 const container = document.getElementById(this.containerId);
-// Remove existing DOM elements not in current timers list
 Array.from(container.children).forEach(el => { if(!this.timers.find(t=>t.id===el.dataset.timerId)) el.remove(); });
 
 this.timers.forEach(timer => {
@@ -514,7 +489,6 @@ el = document.createElement('div');
 el.className = 'timer-window';
 el.id = `timer-${timer.id}`;
 el.dataset.timerId = timer.id;
-// Set position from data object (no transition on initial render)
 el.style.transition='box-shadow .2s ease, left .35s cubic-bezier(0.34,1.56,0.64,1), top .35s cubic-bezier(0.34,1.56,0.64,1)';
 el.style.left = `${timer.x}px`;
 el.style.top = `${timer.y}px`;
@@ -531,24 +505,20 @@ el.innerHTML = `
 </div>`;
 container.appendChild(el);
 } else {
-// Update header name if changed
 const header = el.querySelector('.timer-header');
 if(header) {
 const firstSpan = header.querySelector('span:first-child');
 if(firstSpan && firstSpan.textContent !== `⏱ ${timer.name}`) {
 header.insertBefore(document.createTextNode(`⏱ ${escHtml(timer.name)}`), header.firstChild);
-// Remove old text node (the one before the close button span)
 const closeBtn = header.querySelector('span:last-child');
 if(header.childNodes[0] && typeof header.childNodes[0].textContent === 'string') {
 header.removeChild(header.childNodes[0]);
 }
 }
 }
-// Update name display
 const nameEl = el.querySelector('.timer-name');
 if(nameEl) { nameEl.textContent = escHtml(timer.name); nameEl.title = timer.name; }
 
-// Ensure position is maintained from data object
 el.style.left = `${timer.x}px`;
 el.style.top = `${timer.y}px`;
 }
@@ -565,8 +535,6 @@ showToast(`Timer renamed to "${input.trim()}"`, 'info');
 }
 },
 
-/* ── TICK / UPDATE DISPLAYS ───────────── */
-
 update() {
 const now = Date.now();
 this.timers.forEach(timer => {
@@ -582,7 +550,7 @@ timer.elapsed = timer.duration;
 displayTime = fmtCountdown(remaining);
 phaseClass = 'countdown';
 }
-} else { // countup — flashing red after deadline/finish
+} else {
 const elapsed = (now - timer.switchTime) + timer.elapsed;
 displayTime = fmtCountdown(elapsed);
 phaseClass = 'countup';
@@ -597,8 +565,6 @@ dispEl.className = `timer-display ${phaseClass}`;
 }
 });
 },
-
-/* ── SNAP ON DRAG RELEASE ─────────────── */
 
 snapAllToGrid() {
 this.timers.forEach(timer => {
@@ -622,7 +588,6 @@ function renderGridLines(leftX, rightX) {
 const container = document.getElementById('gridLinesContainer');
 container.innerHTML = '';
 
-// Vertical grid lines for each column
 [leftX, rightX].forEach(x => {
 const line = document.createElement('div');
 line.className = 'grid-line grid-line--vertical';
@@ -630,7 +595,6 @@ line.style.left = `${x}px`;
 container.appendChild(line);
 });
 
-// Horizontal grid lines at each row position
 for (let r = 0; r < TimerManager.gridSlots.length; r++) {
 const y = TimerManager.gridSlots[r].y + TimerManager.TIMER_H / 2;
 const line = document.createElement('div');
@@ -660,7 +624,6 @@ function escAttr(s) { return s.replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace
 
 function showToast(msg, type='info') { const t=document.createElement('div');t.className=`toast ${type}`;t.textContent=msg;toastContainer.appendChild(t);setTimeout(()=>t.remove(),3100); }
 
-// ── hh:mm:ss format only (no days) ──
 function fmtCountdown(ms) {
 const abs = Math.abs(ms);
 const totalSec = Math.floor(abs / 1000);
@@ -708,6 +671,12 @@ activeCountEl.textContent=ac;
 overdueCountEl.textContent=tasks.length-ac;
 
 TimerManager.update();
+
+// Clock Update
+const clockEl = document.getElementById('appClock');
+if(clockEl) {
+clockEl.textContent = now.toLocaleTimeString('en-GB', { hour12: false });
+}
 }
 
 function addCategory() { const name=newCatInput.value.trim(); if(!name){flashErr(newCatInput);showToast('Enter a category name.','error');return;} if(categories.includes(name)){flashErr(newCatInput);showToast('Already exists.','error');return;} categories.push(name); saveData(); renderCategories(); renderTasks(); newCatInput.value=''; showToast(`"${name}" added.`,'success'); }
@@ -717,7 +686,7 @@ window._rmTask = function(taskId) { const card=document.querySelector(`.task-car
 function flashErr(el) { el.classList.add('error'); setTimeout(()=>el.classList.remove('error'),500); }
 
 // ════════════════════════════════════════
-// TIMER MODAL & DRAG LOGIC (GRID SNAP)
+// TIMER MODAL & DRAG LOGIC (GRID SNAP + TOUCH SUPPORT)
 // ════════════════════════════════════════
 let modalEl = null;
 function openTimerModal() {
@@ -756,7 +725,7 @@ modalEl.addEventListener('click', e => { if(e.target===modalEl) closeModal(); })
 
 function closeModal() { if(modalEl){modalEl.remove();modalEl=null;} }
 
-// Drag logic — snaps to grid on release
+// Mouse Drag Logic
 let dragTarget = null, dragOffsetX=0, dragOffsetY=0;
 
 document.addEventListener('mousedown', e => {
@@ -774,7 +743,6 @@ e.preventDefault();
 document.addEventListener('mousemove', e => {
 if(!dragTarget) return;
 let x = e.clientX - dragOffsetX, y = e.clientY - dragOffsetY;
-// During drag: no snapping, free movement
 dragTarget.style.left = `${x}px`;
 dragTarget.style.top = `${y}px`;
 });
@@ -782,18 +750,50 @@ dragTarget.style.top = `${y}px`;
 document.addEventListener('mouseup', () => {
 if(dragTarget) {
 dragTarget.classList.remove('dragging');
-
-// Find which timer this element belongs to and snap it to grid
 const timerId = dragTarget.dataset.timerId;
 const timer = TimerManager.timers.find(t => t.id === timerId);
 if(timer) {
 timer.x = parseFloat(dragTarget.style.left);
 timer.y = parseFloat(dragTarget.style.top);
 }
-
-// Snap ALL timers to their nearest grid slots (resolves overlaps cleanly)
 TimerManager.snapAllToGrid();
+dragTarget = null;
+}
+});
 
+// Touch Drag Logic (Mobile/Tablet Support)
+document.addEventListener('touchstart', e => {
+const header = e.target.closest('.timer-header');
+if(header && !e.target.closest('button')) { // Ignore if clicking buttons inside header
+e.preventDefault();
+dragTarget = header.parentElement;
+const touch = e.touches[0];
+const rect = dragTarget.getBoundingClientRect();
+dragOffsetX = touch.clientX - rect.left;
+dragOffsetY = touch.clientY - rect.top;
+dragTarget.classList.add('dragging');
+}
+}, { passive: false });
+
+document.addEventListener('touchmove', e => {
+if(!dragTarget) return;
+e.preventDefault();
+const touch = e.touches[0];
+let x = touch.clientX - dragOffsetX, y = touch.clientY - dragOffsetY;
+dragTarget.style.left = `${x}px`;
+dragTarget.style.top = `${y}px`;
+}, { passive: false });
+
+document.addEventListener('touchend', () => {
+if(dragTarget) {
+dragTarget.classList.remove('dragging');
+const timerId = dragTarget.dataset.timerId;
+const timer = TimerManager.timers.find(t => t.id === timerId);
+if(timer) {
+timer.x = parseFloat(dragTarget.style.left);
+timer.y = parseFloat(dragTarget.style.top);
+}
+TimerManager.snapAllToGrid();
 dragTarget = null;
 }
 });
@@ -820,4 +820,3 @@ window._tm = TimerManager; // expose for inline onclicks
 </script>
 </body>
 </html>
-

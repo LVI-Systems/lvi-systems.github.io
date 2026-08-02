@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BOLD Task Planner</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+--black: #1a1a1a;
+--white: #fefefe;
+--yellow: #ffe156;
+--pink: #ff6b9d;
+--blue: #4ecdc4;
+--purple: #c084fc;
+--orange: #ff8a5c;
+--green: #7bed9f;
+--red: #ff4757;
+--border: 3px solid var(--black);
+--shadow: 6px 6px 0px var(--black);
+--shadow-lg: 10px 10px 0px var(--black);
+--shadow-sm: 4px 4px 0px var(--black);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+font-family: 'Space Grotesk', sans-serif;
+background-color: #f5f0e8;
+color: var(--black);
+min-height: 100vh;
+position: relative;
+overflow-x: hidden;
+}
+
+body::before {
+content: ''; position: fixed; inset: 0;
+background-image: linear-gradient(rgba(26,26,26,0.03) 1px, transparent 1px),
+linear-gradient(90deg, rgba(26,26,26,0.03) 1px, transparent 1px);
+background-size: 40px 40px; z-index: -1;
+}
+
+body::after {
+content: ''; position: fixed; top: -100px; right: -100px; width: 400px; height: 400px;
+background: repeating-linear-gradient(-45deg, transparent, transparent 20px, rgba(26,26,26,0.03) 20px, rgba(26,26,26,0.03) 21px);
+z-index: -1;
+}
+
+.container { max-width: 1100px; margin: 0 auto; padding: 30px 20px 60px; position: relative; z-index: 1; }
+
+/* ── HEADER ── */
+.header { text-align: center; margin-bottom: 40px; animation: slideDown 0.6s cubic-bezier(0.34,1.56,0.64,1) both; }
+@keyframes slideDown { from { opacity:0; transform:translateY(-40px); } to { opacity:1; transform:translateY(0); } }
+
+.header h1 {
+font-size: 3.2rem; font-weight:700; letter-spacing:-2px; text-transform:uppercase;
+display:inline-block; background:var(--yellow); border:var(--border); padding:16px 40px;
+box-shadow:var(--shadow-lg); position:relative; line-height:1.1;
+}
+.header h1::after { content:''; position:absolute; bottom:-8px; right:-8px; width:100%; height:100%; border:var(--border); z-index:-1; background:transparent; }
+.header-sub { margin-top:16px; font-family:'Space Mono',monospace; font-size:.85rem; letter-spacing:3px; text-transform:uppercase; color:#666; }
+
+/* ── STATS BAR ── */
+.stats-bar { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:30px; animation:slideUp 0.6s cubic-bezier(0.34,1.56,0.64,1) .15s both; }
+@keyframes slideUp { from { opacity:0; transform:translateY(30px); } to { opacity:1; transform:translateY(0); } }
+
+.stat-box { background:var(--white); border:var(--border); padding:18px 20px; text-align:center; box-shadow:var(--shadow-sm); transition:all .2s ease; position:relative; }
+.stat-box:hover { transform:translate(-2px,-2px); box-shadow:8px 8px 0 var(--black); }
+.stat-box:nth-child(1) { background:var(--blue); }
+.stat-box:nth-child(2) { background:var(--yellow); }
+.stat-box:nth-child(3) { background:var(--pink); }
+
+.stat-number { font-family:'Space Mono',monospace; font-size:2.4rem; font-weight:700; line-height:1; }
+.stat-label { font-size:.75rem; text-transform:uppercase; letter-spacing:2px; margin-top:6px; font-weight:600; opacity:.8; }
+
+/* ── PANELS ── */
+.panel { background:var(--white); border:var(--border); box-shadow:var(--shadow-lg); margin-bottom:24px; animation:panelIn .6s cubic-bezier(0.34,1.56,0.64,1) both; position:relative; }
+.panel::before { content:''; position:absolute; top:0; left:0; right:0; height:5px; }
+.panel:nth-child(1)::before { background:var(--purple); }
+.panel:nth-child(2)::before { background:var(--orange); }
+.panel:nth-child(3)::before { background:var(--green); }
+
+@keyframes panelIn { from { opacity:0; transform:translateY(40px) scale(.97); } to { opacity:1; transform:translateY(0) scale(1); } }
+.panel:nth-child(2) { animation-delay:.1s; }
+.panel:nth-child(3) { animation-delay:.2s; }
+
+.panel-header { padding:18px 24px; border-bottom:var(--border); display:flex; align-items:center; gap:12px; background:rgba(0,0,0,.02); }
+.panel-header .icon { width:36px; height:36px; border:var(--border); display:flex; align-items:center; justify-content:center; font-size:1.1rem; background:var(--yellow); box-shadow:var(--shadow-sm); }
+.panel-header h2 { font-size:1.1rem; font-weight:700; text-transform:uppercase; letter-spacing:1px; }
+.panel-body { padding:24px; }
+
+/* ── INPUTS & BUTTONS ── */
+.input-row { display:flex; gap:10px; margin-bottom:16px; }
+.glass-input, select.glass-input { font-family:'Space Grotesk',sans-serif; font-size:.95rem; padding:14px 18px; border:var(--border); background:#f8f6f2; color:var(--black); outline:none; transition:all .15s ease; }
+.glass-input:focus, select.glass-input:focus { background:var(--yellow); box-shadow:var(--shadow-sm); transform:translate(-2px,-2px); }
+.glass-input::placeholder { color:#999; font-weight:400; }
+.glass-input.error { border-color:var(--red); background:#fff0f0; animation:shake .4s ease; }
+@keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-8px)} 75%{transform:translateX(8px)} }
+
+select.glass-input { cursor:pointer; appearance:none; -webkit-appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='%231a1a1a' viewBox='0 0 16 16'%3E%3Cpath d='M8 12L2 5h12z'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 14px center; padding-right:40px; }
+select.glass-input option { background:#f8f6f2; color:var(--black); border:none; }
+
+.btn { font-family:'Space Grotesk',sans-serif; font-size:.9rem; font-weight:700; text-transform:uppercase; letter-spacing:1px; padding:14px 28px; border:var(--border); cursor:pointer; transition:all .15s ease; position:relative; white-space:nowrap; }
+.btn-primary { background:var(--purple); color:var(--black); box-shadow:var(--shadow-sm); }
+.btn-primary:hover { transform:translate(-2px,-2px); box-shadow:8px 8px 0 var(--black); background:#d4a5ff; }
+.btn-primary:active { transform:translate(3px,3px); box-shadow:2px 2px 0 var(--black); }
+
+.btn-danger { background:var(--red); color:#fff; border-color:var(--black); padding:10px 18px; font-size:.78rem; box-shadow:var(--shadow-sm); }
+.btn-danger:hover { transform:translate(-2px,-2px); box-shadow:7px 7px 0 var(--black); background:#ff6b7a; }
+.btn-danger:active { transform:translate(3px,3px); box-shadow:1px 1px 0 var(--black); }
+
+/* ── COOKIE BANNER & STATUS ── */
+.cookie-banner { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); width:min(90vw,600px); background:var(--black); color:var(--white); border:3px solid var(--yellow); padding:20px 28px; box-shadow:var(--shadow-lg); z-index:10000; animation:slideUp .5s cubic-bezier(0.34,1.56,0.64,1) both; display:flex; flex-direction:column; gap:12px; }
+.cookie-banner.hidden { display:none; }
+.cookie-banner p { font-size:.85rem; line-height:1.5; color:rgba(255,255,255,.8); }
+.cookie-btns { display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap; }
+.btn-cookie-accept { background:var(--green); color:var(--black); border:2px solid var(--white); padding:10px 24px; font-weight:700; cursor:pointer; text-transform:uppercase; letter-spacing:1px; transition:all .15s ease; }
+.btn-cookie-accept:hover { transform:translate(-2px,-2px); box-shadow:4px 4px 0 var(--white); }
+.btn-cookie-decline { background:transparent; color:var(--red); border:2px solid var(--red); padding:10px 24px; font-weight:700; cursor:pointer; text-transform:uppercase; letter-spacing:1px; transition:all .15s ease; }
+.btn-cookie-decline:hover { background:var(--red); color:#fff; transform:translate(-2px,-2px); box-shadow:4px 4px 0 var(--black); }
+
+.cookie-status { position:fixed; top:12px; right:12px; z-index:9000; display:flex; align-items:center; gap:6px; padding:8px 14px; border:var(--border); background:var(--white); box-shadow:var(--shadow-sm); font-family:'Space Mono',monospace; font-size:.7rem; text-transform:uppercase; letter-spacing:1px; transition:all .3s ease; opacity:0; transform:translateY(-10px); }
+.cookie-status.visible { opacity:1; transform:translateY(0); }
+.cookie-status.on { background:var(--green); color:var(--black); }
+.cookie-status.off { background:var(--red); color:#fff; }
+.cookie-dot { width:8px; height:8px; border-radius:50%; border:2px solid var(--black); animation:pulseDot 1.5s ease-in-out infinite; }
+.cookie-status.on .cookie-dot { background:var(--black); }
+.cookie-status.off .cookie-dot { background:transparent; }
+@keyframes pulseDot { 0%,100%{transform:scale(1)} 50%{transform:scale(1.3)} }
+
+/* ── CATEGORY TAGS ── */
+.category-tags { display:flex; flex-wrap:wrap; gap:10px; min-height:40px; }
+.cat-tag { display:inline-flex; align-items:center; gap:8px; padding:10px 16px; border:var(--border); font-weight:600; font-size:.85rem; animation:tagPop .35s cubic-bezier(0.34,1.56,0.64,1) both; position:relative; transition:all .2s ease; }
+.cat-tag:hover { transform:translate(-1px,-1px); box-shadow:var(--shadow-sm); }
+@keyframes tagPop { from { opacity:0; transform:scale(.7) rotate(-3deg); } to { opacity:1; transform:scale(1) rotate(0deg); } }
+.cat-tag .remove-cat { width:22px; height:22px; border:var(--border); background:rgba(0,0,0,.08); color:var(--black); font-size:.7rem; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all .15s ease; font-weight:700; }
+.cat-tag .remove-cat:hover { background:var(--red); color:#fff; }
+.cat-color-0 { background:var(--yellow); } .cat-color-1 { background:var(--blue); } .cat-color-2 { background:var(--pink); }
+.cat-color-3 { background:var(--green); } .cat-color-4 { background:var(--orange); } .cat-color-5 { background:var(--purple); }
+.empty-state { font-family:'Space Mono',monospace; font-size:.82rem; color:#aaa; padding:6px 0; letter-spacing:1px; }
+
+/* ── TASK FORM & LIST ── */
+.task-form-row { display:flex; gap:10px; align-items:end; flex-wrap:wrap; }
+.form-group { display:flex; flex-direction:column; gap:6px; }
+.form-group label { font-size:.72rem; text-transform:uppercase; letter-spacing:1.5px; font-weight:700; color:#888; }
+.form-group.name-group { flex:2; min-width:160px; } .form-group.cat-group { flex:1; min-width:130px; } .form-group.date-group { flex:1; min-width:175px; }
+
+.task-list { display:grid; gap:14px; }
+.task-card { border:var(--border); padding:20px 24px; display:flex; align-items:center; justify-content:space-between; gap:16px; animation:taskIn .5s cubic-bezier(0.34,1.56,0.64,1) both; transition:all .2s ease; position:relative; background:var(--white); }
+@keyframes taskIn { from { opacity:0; transform:translateX(-30px) scale(.96); } to { opacity:1; transform:translateX(0) scale(1); } }
+.task-card:hover { transform:translate(-2px,-2px); box-shadow:var(--shadow-sm); }
+.task-card.status-active::before { content:''; position:absolute; left:0; top:0; bottom:0; width:6px; background:var(--blue); }
+.task-card.status-overdue { background:#fff5f5; animation:flashOverdue 1.2s ease-in-out infinite; }
+@keyframes flashOverdue { 0%,100%{box-shadow:var(--shadow-sm);border-color:var(--black)} 50%{box-shadow:6px 6px 0 var(--red), inset 0 0 30px rgba(255,71,87,.08);border-color:var(--red);} }
+.task-card.status-overdue::before { content:''; position:absolute; left:0; top:0; bottom:0; width:6px; background:var(--red); }
+.task-info { flex:1; min-width:0; }
+.task-name { font-size:1.1rem; font-weight:700; margin-bottom:8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.task-meta { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+.cat-badge { padding:4px 12px; border:var(--border); font-size:.75rem; font-weight:700; text-transform:uppercase; letter-spacing:.5px; transition:background .3s ease, border-color .3s ease; }
+.deadline-text { font-family:'Space Mono',monospace; font-size:.78rem; color:#888; }
+
+.countdown-display { text-align:center; min-width:160px; }
+.countdown-value { font-family:'Space Mono',monospace; font-size:1.5rem; font-weight:700; letter-spacing:2px; line-height:1; padding:8px 14px; border:var(--border); background:#f0ede6; display:inline-block; transition:all .3s ease; }
+.countdown-value.active { color:#2d7a6e; background:rgba(78,205,196,.15); }
+.countdown-value.overdue { color:var(--red); background:rgba(255,71,87,.1); animation:pulseBorder 1.2s ease-in-out infinite; }
+@keyframes pulseBorder { 0%,100%{border-color:var(--black)} 50%{border-color:var(--red); box-shadow:0 0 0 3px rgba(255,71,87,.2);} }
+.countdown-label { font-family:'Space Mono',monospace; font-size:.65rem; text-transform:uppercase; letter-spacing:3px; margin-top:8px; color:#999; }
+.countdown-label.overdue { color:var(--red); font-weight:700; }
+
+.task-actions { display:flex; gap:6px; }
+.no-tasks-msg { text-align:center; padding:50px 20px; border:var(--border); background:rgba(0,0,0,.02); }
+.no-tasks-msg .big-icon { font-size:3rem; display:block; margin-bottom:12px; }
+.no-tasks-msg p { font-family:'Space Mono',monospace; font-size:.85rem; color:#aaa; letter-spacing:1px; }
+
+/* ── TOAST ── */
+.toast-container { position:fixed; top:24px; right:24px; z-index:9999; display:flex; flex-direction:column; gap:10px; }
+.toast { padding:16px 24px; border:var(--border); font-family:'Space Grotesk',sans-serif; font-size:.88rem; font-weight:600; box-shadow:var(--shadow-sm); animation:toastIn .4s cubic-bezier(0.34,1.56,0.64,1) both, toastOut .3s ease-in 2.7s forwards; max-width:360px; }
+.toast.success { background:var(--green); color:var(--black); }
+.toast.error   { background:var(--red); color:#fff; }
+.toast.info    { background:var(--blue); color:var(--black); }
+@keyframes toastIn { from { opacity:0; transform:translateX(60px) scale(.9); } to { opacity:1; transform:translateX(0) scale(1); } }
+@keyframes toastOut { to { opacity:0; transform:translateX(80px) scale(.95); } }
+
+/* ── GRID LINES (visual indicators) ── */
+.grid-line {
+position:fixed; z-index:7000; pointer-events:none;
+}
+.grid-line--vertical {
+width:2px; top:0; bottom:0;
+background: repeating-linear-gradient(180deg, rgba(26,26,26,.08) 0px, rgba(26,26,26,.08) 4px, transparent 4px, transparent 10px);
+}
+.grid-line--horizontal {
+height:2px; left:0; right:0;
+background: repeating-linear-gradient(90deg, rgba(26,26,26,.05) 0px, rgba(26,26,26,.05) 4px, transparent 4px, transparent 10px);
+}
+
+/* ── TIMER WINDOWS ── */
+.timer-window {
+position:fixed; width:170px; background:var(--white); border:var(--border); box-shadow:var(--shadow-sm);
+z-index:8000; user-select:none; transition:box-shadow .2s ease, left .35s cubic-bezier(0.34,1.56,0.64,1), top .35s cubic-bezier(0.34,1.56,0.64,1);
+}
+.timer-window.dragging { cursor:grabbing; box-shadow: var(--shadow-lg); z-index:9500; transition: none; }
+.timer-header { padding:8px 12px; background:var(--yellow); border-bottom:var(--border); font-weight:700; font-size:.8rem; text-transform:uppercase; letter-spacing:1px; cursor:grab; display:flex; justify-content:space-between; align-items:center; }
+.timer-header:active { cursor:grabbing; }
+.timer-body { padding:12px; display:flex; flex-direction:column; gap:8px; }
+.timer-name { font-size:.75rem; color:#666; text-transform:uppercase; letter-spacing:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; cursor:pointer; }
+.timer-name:hover { color:var(--black); text-decoration:underline; }
+.timer-display { font-family:'Space Mono',monospace; font-size:1.4rem; font-weight:700; text-align:center; padding:8px; border:var(--border); background:#f0ede6; letter-spacing:2px; transition:color .3s, background .3s; }
+.timer-display.countdown { color:#2d7a6e; background:rgba(78,205,196,.15); }
+.timer-display.countup { color:var(--red); background:rgba(255,71,87,.1); animation:pulseBorder 1.2s ease-in-out infinite; }
+.timer-controls { display:flex; gap:6px; justify-content:center; margin-top:4px; }
+.btn-timer { font-family:'Space Mono',monospace; font-size:.7rem; padding:6px 10px; border:var(--border); background:#f8f6f2; cursor:pointer; transition:all .15s ease; font-weight:700; }
+.btn-timer:hover { transform:translate(-1px,-1px); box-shadow:3px 3px 0 var(--black); }
+.btn-timer.pause { background:var(--yellow); }
+.btn-timer.stop { background:var(--red); color:#fff; }
+
+/* ── TIMER MODAL ── */
+.timer-modal-overlay { position:fixed; inset:0; background:rgba(26,26,26,.4); z-index:15000; display:flex; align-items:center; justify-content:center; animation:fadeIn .2s ease; }
+@keyframes fadeIn { from{opacity:0} to{opacity:1} }
+.timer-modal { background:var(--white); border:var(--border); box-shadow:var(--shadow-lg); padding:24px; width:min(90vw,380px); animation:modalPop .3s cubic-bezier(0.34,1.56,0.64,1) both; }
+@keyframes modalPop { from{opacity:0; transform:scale(.8) translateY(20px)} to{opacity:1; transform:scale(1) translateY(0)} }
+.timer-modal h3 { font-size:1rem; text-transform:uppercase; letter-spacing:1px; margin-bottom:16px; border-bottom:var(--border); padding-bottom:8px; }
+
+.modal-name-input { width:100%; padding:12px 14px; border:var(--border); background:#f8f6f2; font-family:'Space Grotesk',sans-serif; font-size:.95rem; outline:none; margin-bottom:16px; transition:all .15s ease; }
+.modal-name-input:focus { background:var(--yellow); box-shadow:var(--shadow-sm); transform:translate(-1px,-1px); }
+
+.modal-time-row { display:flex; gap:8px; align-items:center; justify-content:center; margin-bottom:20px; }
+.modal-time-group { display:flex; flex-direction:column; align-items:center; gap:4px; }
+.modal-time-group label { font-size:.7rem; text-transform:uppercase; letter-spacing:1px; color:#888; }
+.modal-time-group input { width:60px; padding:10px; border:var(--border); background:#f8f6f2; text-align:center; font-family:'Space Mono',monospace; font-size:1.1rem; font-weight:700; outline:none; transition:all .15s ease; }
+.modal-time-group input:focus { background:var(--yellow); box-shadow:var(--shadow-sm); transform:translate(-1px,-1px); }
+.modal-sep { font-size:1.5rem; font-weight:700; padding-top:14px; }
+
+.modal-btns { display:flex; gap:10px; justify-content:center; }
+
+/* ── DECORATIVE & RESPONSIVE ── */
+.deco-dots { position:fixed; bottom:30px; left:30px; display:grid; grid-template-columns:repeat(5,8px); gap:6px; opacity:.15; z-index:-1; }
+.deco-dots span { width:8px; height:8px; border:2px solid var(--black); border-radius:50%; }
+
+@media (max-width:768px) {
+.header h1 { font-size:2rem; padding:12px 24px; }
+.stats-bar { grid-template-columns:repeat(3,1fr); gap:8px; }
+.stat-box { padding:12px 10px; }
+.stat-number { font-size:1.6rem; }
+.panel-body { padding:16px; }
+.task-form-row { flex-direction:column; }
+.form-group { min-width:100% !important; }
+.input-row { flex-direction:column; }
+.task-card { flex-direction:column; align-items:flex-start; gap:12px; }
+.countdown-display { text-align:left; min-width:auto; width:100%; }
+.countdown-value { font-size:1.3rem; }
+.task-actions { width:100%; justify-content:flex-end; margin-top:4px; }
+.btn-primary { width:100%; text-align:center; }
+}
+
+::-webkit-scrollbar { width:8px; }
+::-webkit-scrollbar-track { background:#f5f0e8; border-left:var(--border); }
+::-webkit-scrollbar-thumb { background:var(--black); }
+::selection { background:var(--yellow); color:var(--black); }
+</style>
+</head>
+<body>
+
+<div class="deco-dots">
+<span></span><span></span><span></span><span></span><span></span>
+<span></span><span></span><span></span><span></span><span></span>
+<span></span><span></span><span></span><span></span><span></span>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+<div class="cookie-status" id="cookieStatus"><span class="cookie-dot"></span><span id="cookieStatusLabel">Cookies: OFF</span></div>
+<div class="cookie-banner hidden" id="cookieBanner">
+<p><strong>// COOKIE NOTICE //</strong> This planner uses cookies to persist your categories and tasks across sessions. No tracking, no third parties — just your data stored locally in your browser via cookie headers. You can accept or decline.</p>
+<div class="cookie-btns">
+<button class="btn-cookie-accept" id="cookieAcceptBtn">ACCEPT</button>
+<button class="btn-cookie-decline" id="cookieDeclineBtn">DECLINE</button>
+</div>
+</div>
+
+<!-- Grid lines container -->
+<div id="gridLinesContainer"></div>
+
+<div class="container">
+<div class="header"><h1>Task<br>Planner</h1><p class="header-sub">// organize with intention //</p></div>
+<div class="stats-bar">
+<div class="stat-box"><div class="stat-number" id="totalCount">0</div><div class="stat-label">Total</div></div>
+<div class="stat-box"><div class="stat-number" id="activeCount">0</div><div class="stat-label">Active</div></div>
+<div class="stat-box"><div class="stat-number" id="overdueCount">0</div><div class="stat-label">Overdue</div></div>
+</div>
+
+<div class="panel">
+<div class="panel-header"><span class="icon">◼</span><h2>Categories</h2></div>
+<div class="panel-body">
+<div class="input-row">
+<input type="text" class="glass-input" id="newCategoryInput" placeholder="New category name..." maxlength="40" style="flex:1;">
+<button class="btn btn-primary" id="addCategoryBtn">+ Add</button>
+</div>
+<div class="category-tags" id="categoryTags"></div>
+</div>
+</div>
+
+<div class="panel">
+<div class="panel-header"><span class="icon">◆</span><h2>Create Task</h2></div>
+<div class="panel-body">
+<div class="task-form-row">
+<div class="form-group name-group"><label>Task Name</label><input type="text" class="glass-input" id="taskNameInput" placeholder="What needs doing?" maxlength="100"></div>
+<div class="form-group cat-group"><label>Category</label><select class="glass-input" id="taskCategorySelect"></select></div>
+<div class="form-group date-group"><label>Deadline</label><input type="datetime-local" class="glass-input" id="taskDeadlineInput"></div>
+<button class="btn btn-primary" id="addTaskBtn" style="align-self:end;">Add Task</button>
+</div>
+</div>
+</div>
+
+<div class="panel">
+<div class="panel-header"><span class="icon">▸</span><h2>All Tasks</h2></div>
+<div class="panel-body">
+<div class="task-list" id="taskList"></div>
+</div>
+</div>
+
+<!-- Timer Creation Button -->
+<div style="text-align:center; margin-top:10px; animation:slideUp .6s cubic-bezier(0.34,1.56,0.64,1) .3s both;">
+<button class="btn btn-primary" id="createTimerBtn" style="background:var(--orange);">+ New Timer</button>
+</div>
+</div>
+
+<!-- Timer Windows Container -->
+<div id="timerContainer"></div>
+
+<script>
+(function() {
+// ════════════════════════════════════════
+// COOKIE TRACKING SYSTEM
+// ════════════════════════════════════════
+const CookieStore = {
+PREFIX: 'tp_', TTL_DAYS: 365,
+_expiresDate() { const d=new Date(); d.setTime(d.getTime()+(this.TTL_DAYS*86400000)); return d.toUTCString(); },
+set(key, value) { if(!CookieStore.isEnabled())return false; try{document.cookie=`${this.PREFIX}${key}=${encodeURIComponent(JSON.stringify(value))}; expires=${this._expiresDate()}; SameSite=Lax; Path=/`;return true;}catch(e){return false;} },
+get(key) { if(!CookieStore.isEnabled())return null; const name=`${this.PREFIX}${key}=`; const cookies=document.cookie.split(';'); for(let c of cookies){c=c.trim();if(c.indexOf(name)===0){try{return JSON.parse(decodeURIComponent(c.substring(name.length)));}catch(e){return null;}}} return null; },
+remove(key) { document.cookie=`${this.PREFIX}${key}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; Path=/; SameSite=Lax`; },
+isEnabled() { return localStorage.getItem('tp_cookie_consent')==='true'; },
+setConsent(granted) { localStorage.setItem('tp_cookie_consent',String(granted)); CookieStore.updateStatusUI(); if(granted){CookieStore.set('categories',JSON.parse(localStorage.getItem('nb_categories')||'[]'));CookieStore.set('tasks',JSON.parse(localStorage.getItem('nb_tasks')||'[]'));} else{CookieStore.remove('categories');CookieStore.remove('tasks');} },
+updateStatusUI() { const el=document.getElementById('cookieStatus'),label=document.getElementById('cookieStatusLabel'); if(!el)return; const on=CookieStore.isEnabled(); el.classList.toggle('visible',true); el.classList.toggle('on',on); el.classList.toggle('off',!on); label.textContent=`Cookies: ${on?'ON':'OFF'}`; }
+};
+
+// ════════════════════════════════════════
+// PUSH NOTIFICATION SYSTEM
+// ════════════════════════════════════════
+const PushNotifier = {
+permission:'default', lastNotifiedOverdueIds:new Set(),
+async init() { if(!('Notification' in window))return; this.permission=Notification.permission; if(this.permission==='granted'){this.checkOverdue();} else if(this.permission!=='denied'){document.addEventListener('click',()=>this.requestPermission(),{once:true}); document.addEventListener('keydown',()=>this.requestPermission(),{once:true});} },
+async requestPermission() { if(this.permission!=='default')return; try{const perm=await Notification.requestPermission(); this.permission=perm; if(perm==='granted'){showToast('Push notifications enabled!','success');this.checkOverdue();}else{showToast('Notifications declined.','info');}}catch(e){} },
+async send(title, body, icon='') { if(this.permission!=='granted')return; try{new Notification(title,{body,icon:icon||'/favicon.ico',tag:title});}catch(e){} },
+checkOverdue() { const tasks=JSON.parse(localStorage.getItem('nb_tasks')||'[]'); const now=Date.now(); let anyNewlyOverdue=false; tasks.forEach(task=>{ if(new Date(task.deadline).getTime()<=now){if(!this.lastNotifiedOverdueIds.has(task.id)){this.send('⏰ Task Overdue',`"${task.name}" — ${task.category}`,''); this.lastNotifiedOverdueIds.add(task.id);anyNewlyOverdue=true;}} else{this.lastNotifiedOverdueIds.delete(task.id);} }); if(anyNewlyOverdue)showToast('⏰ Overdue task notification sent!','error'); },
+notifyTaskAdded(name, category) { this.send(`✅ New Task: ${name}`,`Category: ${category}`); }
+};
+
+// ════════════════════════════════════════
+// TIMER MANAGER — FIXED GRID (LEFT & RIGHT SIDES)
+// ════════════════════════════════════════
+const TimerManager = {
+timers: [], containerId: 'timerContainer',
+
+// Grid configuration — fixed at startup, never changes during runtime
+TIMER_W: 170,
+TIMER_H: 155,
+GAP_Y: 20,       // vertical gap between rows
+COL_PAD: 30,     // horizontal padding from viewport edge to grid column
+ROW_START: 90,   // Y offset from top for first row
+
+// Pre-computed grid slots (set once at startup)
+gridSlots: [],
+
+init() {
+this.computeGrid();
+this.render();
+},
+
+/** Compute the entire grid matrix based on current viewport dimensions. */
+computeGrid() {
+const vw = window.innerWidth;
+const vh = window.innerHeight;
+
+// Two columns: left and right, positioned in the viewport margins
+const leftX = this.COL_PAD;
+const rightX = vw - this.TIMER_W - this.COL_PAD;
+
+// Calculate how many rows fit vertically
+const usableHeight = vh - this.ROW_START - this.COL_PAD;
+const maxRows = Math.max(1, Math.floor((usableHeight + this.GAP_Y) / (this.TIMER_H + this.GAP_Y)));
+
+this.gridSlots = [];
+
+// Right column slots (bottom row first → top row last for fill order)
+for (let r = 0; r < maxRows; r++) {
+this.gridSlots.push({ x: rightX, y: this.ROW_START + r * (this.TIMER_H + this.GAP_Y), col: 'right', row: r });
+}
+
+// Left column slots (bottom row first → top row last for fill order)
+for (let r = 0; r < maxRows; r++) {
+this.gridSlots.push({ x: leftX, y: this.ROW_START + r * (this.TIMER_H + this.GAP_Y), col: 'left', row: r });
+}
+
+// Render grid lines for visual reference
+renderGridLines(leftX, rightX);
+},
+
+/** Total number of available grid slots. */
+get totalSlots() { return this.gridSlots.length; },
+
+/** Number of occupied slots (one per timer). */
+get occupiedCount() { return this.timers.length; },
+
+/** Check if all grid slots are filled. */
+isGridFull() { return this.occupiedCount >= this.totalSlots; },
+
+/** Find the next free slot index, or -1 if full. */
+nextFreeSlotIndex() {
+const occupied = new Set();
+this.timers.forEach(t => {
+let bestIdx = 0, bestDist = Infinity;
+this.gridSlots.forEach((s, i) => {
+const dx = Math.abs(s.x - t.x);
+const dy = Math.abs(s.y - t.y);
+if (dx + dy < bestDist) { bestDist = dx + dy; bestIdx = i; }
+});
+if (bestDist < 30) occupied.add(bestIdx);
+});
+
+for (let i = 0; i < this.gridSlots.length; i++) {
+if (!occupied.has(i)) return i;
+}
+return -1;
+},
+
+/** Snap a raw pixel position to the nearest grid slot. */
+snapToGrid(x, y) {
+let bestIdx = 0, bestDist = Infinity;
+this.gridSlots.forEach((s, i) => {
+const dx = Math.abs(s.x - x);
+const dy = Math.abs(s.y - y);
+if (dx + dy < bestDist) { bestDist = dx + dy; bestIdx = i; }
+});
+return this.gridSlots[bestIdx];
+},
+
+/* ── CREATE / REMOVE / TOGGLE ─────────── */
+
+create(durationSec, name) {
+if (this.isGridFull()) {
+showToast('All grid slots are full. Remove a timer first.', 'error');
+return;
+}
+
+const id = Date.now().toString(36) + Math.random().toString(36).substr(2,4);
+
+// Place in next free grid slot
+const idx = this.nextFreeSlotIndex();
+let x = 0, y = 0;
+if (idx >= 0) {
+x = this.gridSlots[idx].x;
+y = this.gridSlots[idx].y;
+}
+
+const timer = {
+id, name: name || `Timer ${this.timers.length+1}`, duration: durationSec*1000,
+deadline: Date.now() + durationSec*1000, elapsed: 0, switchTime: null, running: true, phase: 'countdown',
+x, y
+};
+
+this.timers.push(timer);
+this.render();
+},
+
+togglePause(id) {
+const t = this.timers.find(x=>x.id===id); if(!t)return;
+if(t.running) { t.running=false; } else { t.running=true; }
+this.render();
+},
+
+remove(id) {
+// Remove from data array
+this.timers = this.timers.filter(x=>x.id!==id);
+
+const el = document.getElementById(`timer-${id}`);
+if(el) {
+el.style.transition='opacity .3s, transform .3s';
+el.style.opacity='0';
+el.style.transform='scale(.8)';
+setTimeout(()=>el.remove(), 300);
+}
+
+// Re-render DOM to remove the element completely after animation
+this.render();
+},
+
+rename(id, newName) {
+const t = this.timers.find(x=>x.id===id); if(!t)return;
+if(newName.trim()) t.name = newName.trim(); else t.name = `Timer ${this.timers.indexOf(t)+1}`;
+this.render();
+},
+
+/* ── RENDER DOM ───────────────────────── */
+
+render() {
+const container = document.getElementById(this.containerId);
+// Remove existing DOM elements not in current timers list
+Array.from(container.children).forEach(el => { if(!this.timers.find(t=>t.id===el.dataset.timerId)) el.remove(); });
+
+this.timers.forEach(timer => {
+let el = document.getElementById(`timer-${timer.id}`);
+if(!el) {
+el = document.createElement('div');
+el.className = 'timer-window';
+el.id = `timer-${timer.id}`;
+el.dataset.timerId = timer.id;
+// Set position from data object (no transition on initial render)
+el.style.transition='box-shadow .2s ease, left .35s cubic-bezier(0.34,1.56,0.64,1), top .35s cubic-bezier(0.34,1.56,0.64,1)';
+el.style.left = `${timer.x}px`;
+el.style.top = `${timer.y}px`;
+
+el.innerHTML = `
+<div class="timer-header">⏱ ${escHtml(timer.name)}<span style="cursor:pointer;font-size:.7rem;" onclick="window._tm.remove('${timer.id}')">✕</span></div>
+<div class="timer-body">
+<div class="timer-name" title="${escAttr(timer.name)}" ondblclick="window._tm.renamePrompt('${timer.id}')" data-timer-id="${timer.id}">${escHtml(timer.name)}</div>
+<div class="timer-display countdown" id="disp-${timer.id}">00:00:00</div>
+<div class="timer-controls">
+<button class="btn-timer pause" onclick="window._tm.togglePause('${timer.id}')">${timer.running?'⏸':'▶'}</button>
+<button class="btn-timer stop" onclick="window._tm.remove('${timer.id}')">✕</button>
+</div>
+</div>`;
+container.appendChild(el);
+} else {
+// Update header name if changed
+const header = el.querySelector('.timer-header');
+if(header) {
+const firstSpan = header.querySelector('span:first-child');
+if(firstSpan && firstSpan.textContent !== `⏱ ${timer.name}`) {
+header.insertBefore(document.createTextNode(`⏱ ${escHtml(timer.name)}`), header.firstChild);
+// Remove old text node (the one before the close button span)
+const closeBtn = header.querySelector('span:last-child');
+if(header.childNodes[0] && typeof header.childNodes[0].textContent === 'string') {
+header.removeChild(header.childNodes[0]);
+}
+}
+}
+// Update name display
+const nameEl = el.querySelector('.timer-name');
+if(nameEl) { nameEl.textContent = escHtml(timer.name); nameEl.title = timer.name; }
+
+// Ensure position is maintained from data object
+el.style.left = `${timer.x}px`;
+el.style.top = `${timer.y}px`;
+}
+});
+},
+
+renamePrompt(id) {
+const t = this.timers.find(x=>x.id===id); if(!t)return;
+const currentName = t.name;
+const input = prompt('Rename timer:', currentName);
+if(input !== null && input.trim() !== '') {
+this.rename(id, input.trim());
+showToast(`Timer renamed to "${input.trim()}"`, 'info');
+}
+},
+
+/* ── TICK / UPDATE DISPLAYS ───────────── */
+
+update() {
+const now = Date.now();
+this.timers.forEach(timer => {
+if(!timer.running) return;
+let displayTime, phaseClass;
+if(timer.phase === 'countdown') {
+const remaining = timer.deadline - now;
+if(remaining <= 0) {
+timer.phase = 'countup';
+timer.switchTime = now;
+timer.elapsed = timer.duration;
+} else {
+displayTime = fmtCountdown(remaining);
+phaseClass = 'countdown';
+}
+} else { // countup — flashing red after deadline/finish
+const elapsed = (now - timer.switchTime) + timer.elapsed;
+displayTime = fmtCountdown(elapsed);
+phaseClass = 'countup';
+}
+
+if(displayTime !== undefined) {
+const dispEl = document.getElementById(`disp-${timer.id}`);
+if(dispEl) {
+dispEl.textContent = displayTime;
+dispEl.className = `timer-display ${phaseClass}`;
+}
+}
+});
+},
+
+/* ── SNAP ON DRAG RELEASE ─────────────── */
+
+snapAllToGrid() {
+this.timers.forEach(timer => {
+const snapped = this.snapToGrid(parseFloat(timer.x), parseFloat(timer.y));
+timer.x = snapped.x;
+timer.y = snapped.y;
+
+const el = document.getElementById(`timer-${timer.id}`);
+if(el) {
+el.style.left = `${timer.x}px`;
+el.style.top = `${timer.y}px`;
+}
+});
+},
+};
+
+// ════════════════════════════════════════
+// GRID LINES (VISUAL INDICATORS)
+// ════════════════════════════════════════
+function renderGridLines(leftX, rightX) {
+const container = document.getElementById('gridLinesContainer');
+container.innerHTML = '';
+
+// Vertical grid lines for each column
+[leftX, rightX].forEach(x => {
+const line = document.createElement('div');
+line.className = 'grid-line grid-line--vertical';
+line.style.left = `${x}px`;
+container.appendChild(line);
+});
+
+// Horizontal grid lines at each row position
+for (let r = 0; r < TimerManager.gridSlots.length; r++) {
+const y = TimerManager.gridSlots[r].y + TimerManager.TIMER_H / 2;
+const line = document.createElement('div');
+line.className = 'grid-line grid-line--horizontal';
+line.style.top = `${y}px`;
+container.appendChild(line);
+}
+}
+
+// ════════════════════════════════════════
+// APP STATE & LOGIC
+// ════════════════════════════════════════
+const catColors = ['cat-color-0','cat-color-1','cat-color-2','cat-color-3','cat-color-4','cat-color-5'];
+let categories = [], tasks = [];
+
+const newCatInput=document.getElementById('newCategoryInput'), addCatBtn=document.getElementById('addCategoryBtn'), catTagsEl=document.getElementById('categoryTags');
+const taskNameInput=document.getElementById('taskNameInput'), taskCatSelect=document.getElementById('taskCategorySelect'), taskDeadlineIn=document.getElementById('taskDeadlineInput');
+const addTaskBtn=document.getElementById('addTaskBtn'), taskListEl=document.getElementById('taskList');
+const totalCountEl=document.getElementById('totalCount'), activeCountEl=document.getElementById('activeCount'), overdueCountEl=document.getElementById('overdueCount');
+const toastContainer=document.getElementById('toastContainer');
+
+function loadData() { if(CookieStore.isEnabled()){const c=CookieStore.get('categories'),t=CookieStore.get('tasks');if(c&&Array.isArray(c))categories=c;if(t&&Array.isArray(t))tasks=t;} else{categories=JSON.parse(localStorage.getItem('nb_categories')||'[]');tasks=JSON.parse(localStorage.getItem('nb_tasks')||'[]');} }
+function saveData() { if(CookieStore.isEnabled()){CookieStore.set('categories',categories);CookieStore.set('tasks',tasks);} localStorage.setItem('nb_categories',JSON.stringify(categories)); localStorage.setItem('nb_tasks',JSON.stringify(tasks)); }
+function genId() { return Date.now().toString(36)+Math.random().toString(36).substr(2,5); }
+function escHtml(s) { const d=document.createElement('div');d.textContent=s;return d.innerHTML; }
+function escAttr(s) { return s.replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'\\"'); }
+
+function showToast(msg, type='info') { const t=document.createElement('div');t.className=`toast ${type}`;t.textContent=msg;toastContainer.appendChild(t);setTimeout(()=>t.remove(),3100); }
+
+// ── hh:mm:ss format only (no days) ──
+function fmtCountdown(ms) {
+const abs = Math.abs(ms);
+const totalSec = Math.floor(abs / 1000);
+const h = Math.floor(totalSec / 3600);
+const m = Math.floor((totalSec % 3600) / 60);
+const s = totalSec % 60;
+return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+
+function fmtDate(dateStr) { const d=new Date(dateStr); return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})+', '+d.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}); }
+
+function renderCategories() { if(categories.length===0){catTagsEl.innerHTML='<span class="empty-state">// no categories yet //</span>';} else{catTagsEl.innerHTML=categories.map((cat,i)=>`<div class="cat-tag ${catColors[i%catColors.length]}" data-cat="${escAttr(cat)}">${escHtml(cat)}<button class="remove-cat" title="Remove category" onclick="window._rmCat('${escAttr(cat)}')">✕</button></div>`).join('');} updateSelect(); }
+function updateSelect() { const cur=taskCatSelect.value; taskCatSelect.innerHTML='<option value="">— select —</option>'; categories.forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;taskCatSelect.appendChild(o);}); if(categories.includes(cur))taskCatSelect.value=cur; }
+
+function renderTasks() { const now=new Date(),activeCount=tasks.filter(t=>new Date(t.deadline)>now).length; totalCountEl.textContent=tasks.length; activeCountEl.textContent=activeCount; overdueCountEl.textContent=tasks.length-activeCount; if(tasks.length===0){taskListEl.innerHTML=`<div class="no-tasks-msg"><span class="big-icon">//</span><p>No tasks yet. Build something.</p></div>`;return;} const sorted=[...tasks].sort((a,b)=>new Date(a.deadline)-new Date(b.deadline)); taskListEl.innerHTML=sorted.map(task=>{ const dl=new Date(task.deadline),diff=dl-now,ov=diff<0,sc=ov?'status-overdue':'status-active',catIdx=categories.indexOf(task.category),badgeColor=catIdx>=0?catColors[catIdx%catColors.length]:''; let cdHtml; if(ov){cdHtml=`<div class="countdown-display"><div class="countdown-value overdue" data-id="${task.id}" data-type="overdue">${fmtCountdown(Math.abs(diff))}</div><div class="countdown-label overdue">// OVERDUE //</div></div>`;} else{cdHtml=`<div class="countdown-display"><div class="countdown-value active" data-id="${task.id}" data-type="active">${fmtCountdown(diff)}</div><div class="countdown-label">// remaining //</div></div>`;} return `<div class="task-card ${sc}" data-id="${task.id}"><div class="task-info"><div class="task-name" title="${escHtml(task.name)}">${escHtml(task.name)}</div><div class="task-meta"><span class="cat-badge ${badgeColor}">${escHtml(task.category)}</span><span class="deadline-text">${fmtDate(task.deadline)}</span></div></div>${cdHtml}<div class="task-actions"><button class="btn btn-danger" onclick="window._rmTask('${task.id}')">REMOVE</button></div></div>`; }).join(''); }
+
+function tick() {
+const now=new Date();
+tasks.forEach(task=>{
+const card=document.querySelector(`.task-card[data-id="${task.id}"]`);
+if(!card)return;
+const dl=new Date(task.deadline),diff=dl-now,ov=diff<0;
+card.classList.remove('status-active','status-overdue');
+card.classList.add(ov?'status-overdue':'status-active');
+const cdEl=card.querySelector('.countdown-value');
+if(cdEl){
+if(ov){
+cdEl.textContent=fmtCountdown(Math.abs(diff));
+cdEl.className='countdown-value overdue';
+} else {
+cdEl.textContent=fmtCountdown(diff);
+cdEl.className='countdown-value active';
+}
+}
+const lbl=card.querySelector('.countdown-label');
+if(lbl){
+lbl.classList.toggle('overdue',ov);
+lbl.textContent=ov?'// OVERDUE //':'// remaining //';
+}
+});
+
+const ac=tasks.filter(t=>new Date(t.deadline)>now).length;
+totalCountEl.textContent=tasks.length;
+activeCountEl.textContent=ac;
+overdueCountEl.textContent=tasks.length-ac;
+
+TimerManager.update();
+}
+
+function addCategory() { const name=newCatInput.value.trim(); if(!name){flashErr(newCatInput);showToast('Enter a category name.','error');return;} if(categories.includes(name)){flashErr(newCatInput);showToast('Already exists.','error');return;} categories.push(name); saveData(); renderCategories(); renderTasks(); newCatInput.value=''; showToast(`"${name}" added.`,'success'); }
+window._rmCat = function(catName) { const hasTasks=tasks.some(t=>t.category===catName); if(hasTasks){showToast(`Can't remove — "${catName}" has ${tasks.filter(t=>t.category===catName).length} task(s).`,'error');return;} const tag=catTagsEl.querySelector(`[data-cat="${escAttr(catName)}"]`); if(tag){tag.classList.add('removing');setTimeout(()=>{categories=categories.filter(c=>c!==catName);saveData();renderCategories();renderTasks();showToast(`"${catName}" removed.`,'info');},350);} else{categories=categories.filter(c=>c!==catName);saveData();renderCategories();renderTasks();showToast(`"${catName}" removed.`,'info');} };
+function addTask() { const name=taskNameInput.value.trim(),cat=taskCatSelect.value,dl=taskDeadlineIn.value; if(!name){flashErr(taskNameInput);showToast('Enter a task name.','error');return;} if(!cat){flashErr(taskCatSelect);showToast('Pick a category.','error');return;} if(!dl){flashErr(taskDeadlineIn);showToast('Set a deadline.','error');return;} tasks.push({id:genId(),name,category:cat,deadline:new Date(dl).toISOString()}); saveData(); renderTasks(); taskNameInput.value=''; taskDeadlineIn.value=''; showToast(`"${name}" added.`,'success'); PushNotifier.notifyTaskAdded(name,cat); }
+window._rmTask = function(taskId) { const card=document.querySelector(`.task-card[data-id="${taskId}"]`); if(card){card.classList.add('removing');setTimeout(()=>{tasks=tasks.filter(t=>t.id!==taskId);saveData();renderTasks();},400);} else{tasks=tasks.filter(t=>t.id!==taskId);saveData();renderTasks();} showToast('Task removed.','info'); };
+function flashErr(el) { el.classList.add('error'); setTimeout(()=>el.classList.remove('error'),500); }
+
+// ════════════════════════════════════════
+// TIMER MODAL & DRAG LOGIC (GRID SNAP)
+// ════════════════════════════════════════
+let modalEl = null;
+function openTimerModal() {
+if(modalEl) return;
+modalEl = document.createElement('div');
+modalEl.className = 'timer-modal-overlay';
+modalEl.innerHTML = `
+<div class="timer-modal">
+<h3>// Set Timer //</h3>
+<input type="text" class="modal-name-input" id="tmNameInput" placeholder="Timer name (optional)" maxlength="40">
+<div class="modal-time-row">
+<div class="modal-time-group"><label>H</label><input type="number" id="tmH" min="0" max="99" value="0"></div>
+<span class="modal-sep">:</span>
+<div class="modal-time-group"><label>M</label><input type="number" id="tmM" min="0" max="59" value="5"></div>
+<span class="modal-sep">:</span>
+<div class="modal-time-group"><label>S</label><input type="number" id="tmS" min="0" max="59" value="0"></div>
+</div>
+<div class="modal-btns">
+<button class="btn btn-primary" id="tmStartBtn" style="background:var(--green);">START</button>
+<button class="btn btn-danger" id="tmCancelBtn">CANCEL</button>
+</div>
+</div>`;
+document.body.appendChild(modalEl);
+setTimeout(()=>modalEl.querySelector('#tmNameInput').focus(),100);
+
+modalEl.querySelector('#tmStartBtn').onclick = () => {
+const h=parseInt(document.getElementById('tmH').value)||0, m=parseInt(document.getElementById('tmM').value)||0, s=parseInt(document.getElementById('tmS').value)||0;
+if(h===0&&m===0&&s===0){showToast('Set a time > 0.','error');return;}
+const name = document.getElementById('tmNameInput').value.trim();
+TimerManager.create(h*3600 + m*60 + s, name || null);
+closeModal();
+};
+modalEl.querySelector('#tmCancelBtn').onclick = closeModal;
+modalEl.addEventListener('click', e => { if(e.target===modalEl) closeModal(); });
+}
+
+function closeModal() { if(modalEl){modalEl.remove();modalEl=null;} }
+
+// Drag logic — snaps to grid on release
+let dragTarget = null, dragOffsetX=0, dragOffsetY=0;
+
+document.addEventListener('mousedown', e => {
+const header = e.target.closest('.timer-header');
+if(header) {
+dragTarget = header.parentElement;
+const rect = dragTarget.getBoundingClientRect();
+dragOffsetX = e.clientX - rect.left;
+dragOffsetY = e.clientY - rect.top;
+dragTarget.classList.add('dragging');
+e.preventDefault();
+}
+});
+
+document.addEventListener('mousemove', e => {
+if(!dragTarget) return;
+let x = e.clientX - dragOffsetX, y = e.clientY - dragOffsetY;
+// During drag: no snapping, free movement
+dragTarget.style.left = `${x}px`;
+dragTarget.style.top = `${y}px`;
+});
+
+document.addEventListener('mouseup', () => {
+if(dragTarget) {
+dragTarget.classList.remove('dragging');
+
+// Find which timer this element belongs to and snap it to grid
+const timerId = dragTarget.dataset.timerId;
+const timer = TimerManager.timers.find(t => t.id === timerId);
+if(timer) {
+timer.x = parseFloat(dragTarget.style.left);
+timer.y = parseFloat(dragTarget.style.top);
+}
+
+// Snap ALL timers to their nearest grid slots (resolves overlaps cleanly)
+TimerManager.snapAllToGrid();
+
+dragTarget = null;
+}
+});
+
+// ════════════════════════════════════════
+// INITIALIZATION
+// ════════════════════════════════════════
+loadData(); CookieStore.updateStatusUI(); showCookieBanner(); renderCategories(); renderTasks(); TimerManager.init(); setInterval(tick, 1000);
+
+const now=new Date(), pad=n=>String(n).padStart(2,'0'); taskDeadlineIn.min=`${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
+PushNotifier.init();
+
+addCatBtn.addEventListener('click', addCategory); newCatInput.addEventListener('keydown', e=>{if(e.key==='Enter')addCategory();});
+addTaskBtn.addEventListener('click', addTask); taskNameInput.addEventListener('keydown', e=>{if(e.key==='Enter')addTask();}); taskDeadlineIn.addEventListener('keydown', e=>{if(e.key==='Enter')addTask();});
+
+const cookieBanner=document.getElementById('cookieBanner'), cookieAcceptBtn=document.getElementById('cookieAcceptBtn'), cookieDeclineBtn=document.getElementById('cookieDeclineBtn');
+function showCookieBanner() { if(localStorage.getItem('tp_cookie_consent')!==null)return; setTimeout(()=>cookieBanner.classList.remove('hidden'),800); }
+cookieAcceptBtn.addEventListener('click', ()=>{ CookieStore.setConsent(true); cookieBanner.classList.add('hidden'); showToast('Cookies accepted — your data is saved.','success'); saveData(); });
+cookieDeclineBtn.addEventListener('click', ()=>{ CookieStore.setConsent(false); cookieBanner.classList.add('hidden'); showToast('Cookies declined — data persists only in this session.','info'); });
+
+document.getElementById('createTimerBtn').addEventListener('click', openTimerModal);
+window._tm = TimerManager; // expose for inline onclicks
+})();
+</script>
+</body>
+</html>
+

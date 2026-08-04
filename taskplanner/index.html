@@ -134,9 +134,22 @@ body::after {
 /* Animated time digits */
 #appClock,.timer-display,.countdown-value{display:flex;align-items:center;justify-content:center}
 .time-digit{position:relative;overflow:hidden;height:1.6em;line-height:1;width:0.55em;display:flex;align-items:center}
-.time-digit .digit-inner{display:block;text-align:center;font-family:'Space Mono',monospace;font-size:inherit;font-weight:700;color:inherit;width:100%}
+.time-digit .digit-inner{display:block;text-align:center;font-family:'Space Mono',monospace;font-size:inherit;font-weight:700;color:inherit;width:100%;height:100%}
+/* The old-digit clone must be absolutely positioned so it can slide independently */
+.time-digit .digit-inner.slide-clone{position:absolute;inset:0;pointer-events:none}
 @keyframes digitScrollUp{0%{transform:translateY(100%);opacity:0}40%{transform:translateY(-8%);opacity:0.3}100%{transform:translateY(0);opacity:1}}
 .time-digit .digit-inner.animating{animation:digitScrollUp 0.25s cubic-bezier(0.4,0,0.2,1)}
+/* Dual-digit slide transitions */
+@keyframes digitSlideOutUp{0%{transform:translateY(0);opacity:1}100%{transform:translateY(-100%);opacity:0}}
+@keyframes digitSlideInUp{0%{transform:translateY(100%);opacity:0}100%{transform:translateY(0);opacity:1}}
+@keyframes digitSlideOutDown{0%{transform:translateY(0);opacity:1}100%{transform:translateY(100%);opacity:0}}
+@keyframes digitSlideInDown{0%{transform:translateY(-100%);opacity:0}100%{transform:translateY(0);opacity:1}}
+.time-digit .digit-inner.digit-slide-out-up{animation:digitSlideOutUp 0.25s ease-in forwards}
+.time-digit .digit-inner.digit-slide-in-up{animation:digitSlideInUp 0.25s cubic-bezier(0.4,0,0.2,1) forwards}
+.time-digit .digit-inner.digit-slide-out-down{animation:digitSlideOutDown 0.25s ease-in forwards}
+.time-digit .digit-inner.digit-slide-in-down{animation:digitSlideInDown 0.25s cubic-bezier(0.4,0,0.2,1) forwards}
+/* Ensure animated digits are absolutely positioned with full dimensions */
+.time-digit .digit-inner.animating{position:absolute;left:0;top:0;width:100%;height:100%}
 .time-separator{font-family:'Space Mono',monospace;font-size:inherit;font-weight:700;color:inherit;padding:0 2px;display:flex;align-items:center;height:1.6em}
 
 .task-actions { display:flex; gap:6px; align-items:center; }
@@ -255,7 +268,7 @@ select.glass-input { cursor:pointer; appearance:none; -webkit-appearance:none; b
 <div id="gridLinesContainer"></div>
 
 <div class="container">
-  <div class="clock-container"><div id="appClock">00:00:00</div></div>
+  <div class="clock-container"><div id="appClock" data-direction="count-up">00:00:00</div></div>
 
   <div class="stats-bar">
     <div class="stat-box"><div class="stat-number" id="totalCount">0</div><div class="stat-label">Total</div></div>
@@ -438,7 +451,7 @@ const TimerManager = {
         el=document.createElement('div'); el.className='timer-window'; el.id=`timer-${timer.id}`; el.dataset.timerId=timer.id;
         el.style.transition='box-shadow .2s ease, left .35s cubic-bezier(0.34,1.56,0.64,1), top .35s cubic-bezier(0.34,1.56,0.64,1)';
         el.style.left=`${timer.x}px`; el.style.top=`${timer.y}px`;
-        el.innerHTML=`<div class="timer-header">⏱ ${escHtml(timer.name)}<span style="cursor:pointer;font-size:.7rem;" onclick="window._tm.remove('${timer.id}')">✕</span></div><div class="timer-body"><div class="timer-name" title="${escAttr(timer.name)}" ondblclick="window._tm.renamePrompt('${timer.id}')" data-timer-id="${timer.id}">${escHtml(timer.name)}</div><div class="timer-display countdown" id="disp-${timer.id}">00:00:00</div><div class="timer-controls"><button class="btn-timer pause" onclick="window._tm.togglePause('${timer.id}')">${timer.running?'⏸':'▶'}</button><button class="btn-timer stop" onclick="window._tm.remove('${timer.id}')">✕</button></div></div>`;
+        el.innerHTML=`<div class="timer-header">⏱ ${escHtml(timer.name)}<span style="cursor:pointer;font-size:.7rem;" onclick="window._tm.remove('${timer.id}')">✕</span></div><div class="timer-body"><div class="timer-name" title="${escAttr(timer.name)}" ondblclick="window._tm.renamePrompt('${timer.id}')" data-timer-id="${timer.id}">${escHtml(timer.name)}</div><div class="timer-display countdown" id="disp-${timer.id}" data-direction="count-down">00:00:00</div><div class="timer-controls"><button class="btn-timer pause" onclick="window._tm.togglePause('${timer.id}')">${timer.running?'⏸':'▶'}</button><button class="btn-timer stop" onclick="window._tm.remove('${timer.id}')">✕</button></div></div>`;
         container.appendChild(el);
         timer.animatedDisplay = new AnimatedTimeDisplay(`disp-${timer.id}`, '00:00:00');
       } else {
@@ -465,7 +478,7 @@ const TimerManager = {
         const elapsed=(now-timer.switchTime)+timer.elapsed;displayTime=fmtTime(elapsed);phaseClass='countup';
       }
       if(displayTime!==undefined && timer.animatedDisplay) { timer.animatedDisplay.update(displayTime); }
-      if(phaseClass !== undefined){const dispEl=document.getElementById(`disp-${timer.id}`);if(dispEl){dispEl.className=`timer-display ${phaseClass}`;}}
+      if(phaseClass !== undefined){const dispEl=document.getElementById(`disp-${timer.id}`);if(dispEl){dispEl.className=`timer-display ${phaseClass}`;dispEl.dataset.direction=phaseClass==='countdown'?'count-down':'count-up';}}
     });
   },
 
@@ -480,6 +493,7 @@ const TimerManager = {
 
 // ════════════════════════════════
 // ANIMATED TIME DISPLAY
+// Dual-digit sliding: old digit exits while new digit enters simultaneously
 // ════════════════════════════════
 class AnimatedTimeDisplay {
   constructor(elementId, initialFormat) {
@@ -487,6 +501,9 @@ class AnimatedTimeDisplay {
     if (!this.el) return;
     this.currentValue = '';
     this.digitWrappers = [];
+    // Determine direction from data attribute or default to count-up
+    const containerEl = this.el.closest('.countdown-display, .timer-display, #appClock');
+    this.direction = (containerEl && containerEl.dataset.direction === 'count-down') ? 'count-down' : 'count-up';
     // Read existing text content first (from HTML template), then build structure
     const existingText = this.el.textContent || initialFormat || '00:00:00';
     this._build(existingText);
@@ -504,7 +521,7 @@ class AnimatedTimeDisplay {
         inner.textContent = ch;
         wrapper.appendChild(inner);
         this.el.appendChild(wrapper);
-        this.digitWrappers.push(inner);
+        this.digitWrappers.push({ current: inner, oldDigit: null });
       } else {
         const sep = document.createElement('span');
         sep.className = 'time-separator';
@@ -516,17 +533,42 @@ class AnimatedTimeDisplay {
 
   update(newValue) {
     if (!this.el || newValue === this.currentValue) return;
+    // Re-read direction each tick — task countdowns flip when crossing deadline
+    const containerEl = this.el.closest('.countdown-display, .timer-display, #appClock');
+    const dir = (containerEl && containerEl.dataset.direction === 'count-down') ? 'count-down' : 'count-up';
     let digitIdx = 0;
     for (let i = 0; i < newValue.length && digitIdx < this.digitWrappers.length; i++) {
       const ch = newValue[i];
       if (ch >= '0' && ch <= '9') {
-        const inner = this.digitWrappers[digitIdx++];
-        if (inner.textContent !== ch) {
-          inner.classList.remove('animating');
-          void inner.offsetWidth;
-          inner.textContent = ch;
-          inner.classList.add('animating');
-          setTimeout(() => inner.classList.remove('animating'), 260);
+        const wrapper = this.digitWrappers[digitIdx++];
+        if (wrapper.current.textContent !== ch) {
+          // Create old digit clone for exit animation
+          const oldDigit = document.createElement('span');
+          oldDigit.className = 'digit-inner slide-clone';
+          oldDigit.textContent = wrapper.current.textContent;
+          wrapper.current.parentElement.appendChild(oldDigit);
+
+          // Determine animation classes based on current direction
+          if (dir === 'count-up') {
+            // Count-up: old digit slides up and fades out, new digit slides up from below
+            oldDigit.classList.add('digit-slide-out-up');
+            wrapper.current.classList.add('digit-slide-in-up');
+          } else {
+            // Count-down: old digit slides down and fades out, new digit slides down from above
+            oldDigit.classList.add('digit-slide-out-down');
+            wrapper.current.classList.add('digit-slide-in-down');
+          }
+
+          // Update to new value immediately (old clone shows the old value)
+          wrapper.current.textContent = ch;
+
+          // Clean up after animation completes
+          const cleanupTime = 260;
+          setTimeout(() => {
+            oldDigit.remove();
+            oldDigit.classList.remove('digit-slide-out-up', 'digit-slide-out-down');
+            wrapper.current.classList.remove('digit-slide-in-up', 'digit-slide-in-down');
+          }, cleanupTime);
         }
       }
     }
@@ -604,8 +646,8 @@ function renderTasks() {
     const badgeColor = catIdx >= 0 ? CAT_COLORS[catIdx % 5] : '#8ec07c';
 
     let cdHtml;
-    if(ov){cdHtml=`<div class="countdown-display"><div class="countdown-value overdue" id="cd-${task.id}" data-id="${task.id}" data-type="overdue">${fmtCountdown(Math.abs(diff))}</div><div class="countdown-label overdue">// OVERDUE //</div></div>`;}
-    else{cdHtml=`<div class="countdown-display"><div class="countdown-value active" id="cd-${task.id}" data-id="${task.id}" data-type="active">${fmtCountdown(diff)}</div><div class="countdown-label">// remaining //</div></div>`;}
+    if(ov){cdHtml=`<div class="countdown-display" data-direction="count-up"><div class="countdown-value overdue" id="cd-${task.id}" data-id="${task.id}" data-type="overdue">${fmtCountdown(Math.abs(diff))}</div><div class="countdown-label overdue">// OVERDUE //</div></div>`;}
+    else{cdHtml=`<div class="countdown-display" data-direction="count-down"><div class="countdown-value active" id="cd-${task.id}" data-id="${task.id}" data-type="active">${fmtCountdown(diff)}</div><div class="countdown-label">// remaining //</div></div>`;}
 
     const completeClass = task.completed ? 'checked' : '';
     const checkIcon = task.completed ? '✓' : '';
@@ -647,10 +689,15 @@ function tick() {
     if (cdAnim) {
       cdAnim.update(fmtCountdown(Math.abs(diff)));
     }
-    // Only update status class on the element
+    // Update status class and direction on the element
     const cdEl = card.querySelector('.countdown-value');
     if (cdEl) {
       cdEl.className = `countdown-value ${ov ? 'overdue' : 'active'}`;
+    }
+    // Sync data-direction so AnimatedTimeDisplay picks up the right slide direction
+    const cdContainer = card.querySelector('.countdown-display');
+    if (cdContainer) {
+      cdContainer.dataset.direction = ov ? 'count-up' : 'count-down';
     }
 
     const lbl = card.querySelector('.countdown-label');

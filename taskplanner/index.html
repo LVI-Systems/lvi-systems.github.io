@@ -618,8 +618,12 @@ function renderTasks() {
       </div>${cdHtml}<div class="task-actions"><button class="btn-danger" onclick="window._rmTask('${task.id}')">REMOVE</button></div></div>`;
   }).join('');
 
-  // Initialize animated displays for new task countdowns
-  sorted.forEach(task=>{const el=document.getElementById(`cd-${task.id}`);if(el&&!window._taskCountdownDisplays.has(task.id))window._taskCountdownDisplays.set(task.id,new AnimatedTimeDisplay(`cd-${task.id}`,'00:00:00:00'));});
+  // Rebuild animated displays — innerHTML replacement destroys all DOM nodes, so old instances are stale
+  window._taskCountdownDisplays.clear();
+  sorted.forEach(task=>{
+    const el=document.getElementById(`cd-${task.id}`);
+    if(el) window._taskCountdownDisplays.set(task.id,new AnimatedTimeDisplay(`cd-${task.id}`,'00:00:00:00'));
+  });
 }
 
 // ── Lightweight per-second tick (NO full re-render) ──

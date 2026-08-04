@@ -133,7 +133,7 @@ body::after {
 
 /* Animated time digits */
 #appClock,.timer-display,.countdown-value{display:flex;align-items:center;justify-content:center;line-height:normal}
-.time-digit{position:relative;overflow:hidden;height:1.6em;line-height:1.6;width:0.55em;display:flex;align-items:center}
+.time-digit{position:relative;overflow:hidden;height:1.6em;line-height:1.6;width:0.7em;display:flex;align-items:center}
 .time-digit .digit-inner{display:block;text-align:center;font-family:'Space Mono',monospace;font-size:inherit;font-weight:700;color:inherit;width:100%;height:100%}
 /* The old-digit clone must be absolutely positioned so it can slide independently */
 .time-digit .digit-inner.slide-clone{position:absolute;inset:0;pointer-events:none}
@@ -373,7 +373,7 @@ const ModalSystem = {
 // ════════════════════════════════════════
 const TimerManager = {
   timers: [], containerId: 'timerContainer',
-  TIMER_W: 320, TIMER_H: 155, GAP_Y: 20, COL_PAD: 30, ROW_START: 90,
+  TIMER_W: 320, TIMER_H: 155, GAP_Y: 28, COL_PAD: 30, ROW_START: 90,
   gridSlots: [],
 
   init() { this.computeGrid(); this.render(); },

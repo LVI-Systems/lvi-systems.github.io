@@ -131,6 +131,14 @@ body::after {
 .countdown-label { font-family:'Space Mono',monospace; font-size:.65rem; text-transform:uppercase; letter-spacing:3px; margin-top:8px; color:var(--text-secondary); }
 .countdown-label.overdue { color:#cc241d; font-weight:700; }
 
+/* Animated time digits */
+#appClock,.timer-display,.countdown-value{display:flex;align-items:center;justify-content:center}
+.time-digit{position:relative;overflow:hidden;height:1.6em;line-height:1;width:0.55em;display:flex;align-items:center}
+.time-digit .digit-inner{display:block;text-align:center;font-family:'Space Mono',monospace;font-size:inherit;font-weight:700;color:inherit;width:100%}
+@keyframes digitScrollUp{0%{transform:translateY(100%);opacity:0}40%{transform:translateY(-8%);opacity:0.3}100%{transform:translateY(0);opacity:1}}
+.time-digit .digit-inner.animating{animation:digitScrollUp 0.25s cubic-bezier(0.4,0,0.2,1)}
+.time-separator{font-family:'Space Mono',monospace;font-size:inherit;font-weight:700;color:inherit;padding:0 2px;display:flex;align-items:center;height:1.6em}
+
 .task-actions { display:flex; gap:6px; align-items:center; }
 .btn-danger { background:var(--btn-danger); color:#fbf1c7; border-color:#504945; padding:10px 18px; font-size:.78rem; box-shadow:var(--shadow-sm); cursor:pointer; transition:all .15s ease; font-weight:700; }
 .btn-danger:hover { transform:translate(-2px,-2px); box-shadow:7px 7px 0 #1d2021; filter:brightness(1.1); }
@@ -187,11 +195,11 @@ select.glass-input { cursor:pointer; appearance:none; -webkit-appearance:none; b
 @keyframes toastOut { to { opacity:0; transform:translateX(80px) scale(.95); } }
 
 /* ── TIMER & GRID ── */
-.grid-line { position:fixed; z-index:7000; pointer-events:none; }
+.grid-line { position:fixed; z-index:-1; pointer-events:none; }
 .grid-line--vertical { width:2px; top:0; bottom:0; background: repeating-linear-gradient(180deg, rgba(251,241,199,.06) 0px, rgba(251,241,199,.06) 4px, transparent 4px, transparent 10px); }
 .grid-line--horizontal { height:2px; left:0; right:0; background: repeating-linear-gradient(90deg, rgba(251,241,199,.04) 0px, rgba(251,241,199,.04) 4px, transparent 4px, transparent 10px); }
 
-.timer-window { position:fixed; width:170px; background:#3c3836; border:var(--border); box-shadow:var(--shadow-sm); z-index:8000; user-select:none; transition:box-shadow .2s ease, left .35s cubic-bezier(0.34,1.56,0.64,1), top .35s cubic-bezier(0.34,1.56,0.64,1); color: var(--text-primary); }
+.timer-window { position:fixed; width:320px; background:#3c3836; border:var(--border); box-shadow:var(--shadow-sm); z-index:8000; user-select:none; transition:box-shadow .2s ease, left .35s cubic-bezier(0.34,1.56,0.64,1), top .35s cubic-bezier(0.34,1.56,0.64,1); color: var(--text-primary); }
 .timer-window.dragging { cursor:grabbing; box-shadow: var(--shadow-lg); z-index:9500; transition: none; }
 .timer-header { padding:8px 12px; background:#d79921; border-bottom:var(--border); font-weight:700; font-size:.8rem; text-transform:uppercase; letter-spacing:1px; cursor:grab; display:flex; justify-content:space-between; align-items:center; color:#282828; }
 .timer-body { padding:12px; display:flex; flex-direction:column; gap:8px; }
@@ -352,7 +360,7 @@ const ModalSystem = {
 // ════════════════════════════════════════
 const TimerManager = {
   timers: [], containerId: 'timerContainer',
-  TIMER_W: 170, TIMER_H: 155, GAP_Y: 20, COL_PAD: 30, ROW_START: 90,
+  TIMER_W: 320, TIMER_H: 155, GAP_Y: 20, COL_PAD: 30, ROW_START: 90,
   gridSlots: [],
 
   init() { this.computeGrid(); this.render(); },
@@ -432,6 +440,7 @@ const TimerManager = {
         el.style.left=`${timer.x}px`; el.style.top=`${timer.y}px`;
         el.innerHTML=`<div class="timer-header">⏱ ${escHtml(timer.name)}<span style="cursor:pointer;font-size:.7rem;" onclick="window._tm.remove('${timer.id}')">✕</span></div><div class="timer-body"><div class="timer-name" title="${escAttr(timer.name)}" ondblclick="window._tm.renamePrompt('${timer.id}')" data-timer-id="${timer.id}">${escHtml(timer.name)}</div><div class="timer-display countdown" id="disp-${timer.id}">00:00:00</div><div class="timer-controls"><button class="btn-timer pause" onclick="window._tm.togglePause('${timer.id}')">${timer.running?'⏸':'▶'}</button><button class="btn-timer stop" onclick="window._tm.remove('${timer.id}')">✕</button></div></div>`;
         container.appendChild(el);
+        timer.animatedDisplay = new AnimatedTimeDisplay(`disp-${timer.id}`, '00:00:00');
       } else {
         const header=el.querySelector('.timer-header');
         if(header){const firstSpan=header.querySelector('span:first-child');if(firstSpan&&firstSpan.textContent!==`⏱ ${timer.name}`){header.insertBefore(document.createTextNode(`⏱ ${escHtml(timer.name)}`),header.firstChild);const closeBtn=header.querySelector('span:last-child');if(header.childNodes[0]&&typeof header.childNodes[0].textContent==='string'){header.removeChild(header.childNodes[0]);}}}
@@ -451,11 +460,12 @@ const TimerManager = {
       if(timer.phase==='countdown'){
         const remaining=timer.deadline-now;
         if(remaining<=0){timer.phase='countup';timer.switchTime=now;timer.elapsed=timer.duration;}
-        else{displayTime=fmtCountdown(remaining);phaseClass='countdown';}
+        else{displayTime=fmtTime(remaining);phaseClass='countdown';}
       } else {
-        const elapsed=(now-timer.switchTime)+timer.elapsed;displayTime=fmtCountdown(elapsed);phaseClass='countup';
+        const elapsed=(now-timer.switchTime)+timer.elapsed;displayTime=fmtTime(elapsed);phaseClass='countup';
       }
-      if(displayTime!==undefined){const dispEl=document.getElementById(`disp-${timer.id}`);if(dispEl){dispEl.textContent=displayTime;dispEl.className=`timer-display ${phaseClass}`;}}
+      if(displayTime!==undefined && timer.animatedDisplay) { timer.animatedDisplay.update(displayTime); }
+      if(phaseClass !== undefined){const dispEl=document.getElementById(`disp-${timer.id}`);if(dispEl){dispEl.className=`timer-display ${phaseClass}`;}}
     });
   },
 
@@ -468,7 +478,63 @@ const TimerManager = {
   }
 };
 
-// ════════════════════════════════════════
+// ════════════════════════════════
+// ANIMATED TIME DISPLAY
+// ════════════════════════════════
+class AnimatedTimeDisplay {
+  constructor(elementId, initialFormat) {
+    this.el = document.getElementById(elementId);
+    if (!this.el) return;
+    this.currentValue = '';
+    this.digitWrappers = [];
+    // Read existing text content first (from HTML template), then build structure
+    const existingText = this.el.textContent || initialFormat || '00:00:00';
+    this._build(existingText);
+  }
+
+  _build(formatStr) {
+    this.el.innerHTML = '';
+    this.digitWrappers = [];
+    for (const ch of formatStr) {
+      if (ch >= '0' && ch <= '9') {
+        const wrapper = document.createElement('span');
+        wrapper.className = 'time-digit';
+        const inner = document.createElement('span');
+        inner.className = 'digit-inner';
+        inner.textContent = ch;
+        wrapper.appendChild(inner);
+        this.el.appendChild(wrapper);
+        this.digitWrappers.push(inner);
+      } else {
+        const sep = document.createElement('span');
+        sep.className = 'time-separator';
+        sep.textContent = ch;
+        this.el.appendChild(sep);
+      }
+    }
+  }
+
+  update(newValue) {
+    if (!this.el || newValue === this.currentValue) return;
+    let digitIdx = 0;
+    for (let i = 0; i < newValue.length && digitIdx < this.digitWrappers.length; i++) {
+      const ch = newValue[i];
+      if (ch >= '0' && ch <= '9') {
+        const inner = this.digitWrappers[digitIdx++];
+        if (inner.textContent !== ch) {
+          inner.classList.remove('animating');
+          void inner.offsetWidth;
+          inner.textContent = ch;
+          inner.classList.add('animating');
+          setTimeout(() => inner.classList.remove('animating'), 260);
+        }
+      }
+    }
+    this.currentValue = newValue;
+  }
+}
+
+// ════════════════════════════════
 // GRID LINES
 // ════════════════════════════════════════
 function renderGridLines(leftX, rightX) {
@@ -495,6 +561,12 @@ function escAttr(s) { return s.replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace
 function showToast(msg, type='info') { const t=document.createElement('div');t.className=`toast ${type}`;t.textContent=msg;toastContainer.appendChild(t);setTimeout(()=>t.remove(),3100); }
 
 function fmtCountdown(ms) {
+  const abs=Math.abs(ms), totalSec=Math.floor(abs/1000);
+  const d=Math.floor(totalSec/86400), h=Math.floor((totalSec%86400)/3600), m=Math.floor((totalSec%3600)/60), s=totalSec%60;
+  return `${String(d).padStart(2,'0')}:${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+
+function fmtTime(ms) {
   const abs=Math.abs(ms), totalSec=Math.floor(abs/1000);
   const h=Math.floor(totalSec/3600), m=Math.floor((totalSec%3600)/60), s=totalSec%60;
   return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
@@ -532,8 +604,8 @@ function renderTasks() {
     const badgeColor = catIdx >= 0 ? CAT_COLORS[catIdx % 5] : '#8ec07c';
 
     let cdHtml;
-    if(ov){cdHtml=`<div class="countdown-display"><div class="countdown-value overdue" data-id="${task.id}" data-type="overdue">${fmtCountdown(Math.abs(diff))}</div><div class="countdown-label overdue">// OVERDUE //</div></div>`;}
-    else{cdHtml=`<div class="countdown-display"><div class="countdown-value active" data-id="${task.id}" data-type="active">${fmtCountdown(diff)}</div><div class="countdown-label">// remaining //</div></div>`;}
+    if(ov){cdHtml=`<div class="countdown-display"><div class="countdown-value overdue" id="cd-${task.id}" data-id="${task.id}" data-type="overdue">${fmtCountdown(Math.abs(diff))}</div><div class="countdown-label overdue">// OVERDUE //</div></div>`;}
+    else{cdHtml=`<div class="countdown-display"><div class="countdown-value active" id="cd-${task.id}" data-id="${task.id}" data-type="active">${fmtCountdown(diff)}</div><div class="countdown-label">// remaining //</div></div>`;}
 
     const completeClass = task.completed ? 'checked' : '';
     const checkIcon = task.completed ? '✓' : '';
@@ -545,6 +617,9 @@ function renderTasks() {
         <div class="task-meta"><span class="cat-badge" style="border-color:${badgeColor}; color:${badgeColor};">${escHtml(task.category)}</span><span class="deadline-text">${fmtDate(task.deadline)}</span></div>
       </div>${cdHtml}<div class="task-actions"><button class="btn-danger" onclick="window._rmTask('${task.id}')">REMOVE</button></div></div>`;
   }).join('');
+
+  // Initialize animated displays for new task countdowns
+  sorted.forEach(task=>{const el=document.getElementById(`cd-${task.id}`);if(el&&!window._taskCountdownDisplays.has(task.id))window._taskCountdownDisplays.set(task.id,new AnimatedTimeDisplay(`cd-${task.id}`,'00:00:00:00'));});
 }
 
 // ── Lightweight per-second tick (NO full re-render) ──
@@ -563,9 +638,14 @@ function tick() {
     card.classList.remove('status-active', 'status-overdue');
     card.classList.add(ov ? 'status-overdue' : 'status-active');
 
+    // Update countdown with animation (animated display handles the text update)
+    const cdAnim = window._taskCountdownDisplays.get(task.id);
+    if (cdAnim) {
+      cdAnim.update(fmtCountdown(Math.abs(diff)));
+    }
+    // Only update status class on the element
     const cdEl = card.querySelector('.countdown-value');
     if (cdEl) {
-      cdEl.textContent = fmtCountdown(Math.abs(diff));
       cdEl.className = `countdown-value ${ov ? 'overdue' : 'active'}`;
     }
 
@@ -578,8 +658,9 @@ function tick() {
 
   TimerManager.update();
 
-  const clockEl = document.getElementById('appClock');
-  if (clockEl) clockEl.textContent = now.toLocaleTimeString('en-GB', { hour12: false });
+  // Clock with animated digits
+  const h=String(now.getHours()).padStart(2,'0'),m=String(now.getMinutes()).padStart(2,'0'),s=String(now.getSeconds()).padStart(2,'0');
+  if(window._clockAnim)window._clockAnim.update(h+':'+m+':'+s);
 }
 
 function toggleComplete(id) {
@@ -604,7 +685,7 @@ function openTimerModal() {
   if(timerModalEl)return;
   timerModalEl=document.createElement('div');
   timerModalEl.className='timer-modal-overlay';
-  timerModalEl.innerHTML=`<div class="modal-box" style="width:min(90vw,380px);"><h3>// Set Timer //</h3><input type="text" class="glass-input" id="tmNameInput" placeholder="Timer name (optional)" maxlength="40"><div class="modal-time-row" style="display:flex; gap:8px; align-items:center; justify-content:center; margin-bottom:20px;"><div class="modal-time-group" style="display:flex; flex-direction:column; align-items:center; gap:4px;"><label style="font-size:.7rem; text-transform:uppercase; letter-spacing:1px; color:#928374;">H</label><input type="number" id="tmH" min="0" max="99" value="0" class="glass-input" style="width:60px;"></div><span class="modal-sep" style="font-size:1.5rem; font-weight:700; padding-top:14px;">:</span><div class="modal-time-group" style="display:flex; flex-direction:column; align-items:center; gap:4px;"><label style="font-size:.7rem; text-transform:uppercase; letter-spacing:1px; color:#928374;">M</label><input type="number" id="tmM" min="0" max="59" value="5" class="glass-input" style="width:60px;"></div><span class="modal-sep" style="font-size:1.5rem; font-weight:700; padding-top:14px;">:</span><div class="modal-time-group" style="display:flex; flex-direction:column; align-items:center; gap:4px;"><label style="font-size:.7rem; text-transform:uppercase; letter-spacing:1px; color:#928374;">S</label><input type="number" id="tmS" min="0" max="59" value="0" class="glass-input" style="width:60px;"></div></div><div class="modal-btns"><button class="btn-save" id="tmStartBtn" style="background:#8ec07c;">START</button><button class="btn-cancel" id="tmCancelBtn">CANCEL</button></div></div>`;
+  timerModalEl.innerHTML=`<div class="modal-box" style="width:min(90vw,420px);"><h3>// Set Timer //</h3><input type="text" class="glass-input" id="tmNameInput" placeholder="Timer name (optional)" maxlength="40"><div class="modal-time-row" style="display:flex; gap:12px; align-items:center; justify-content:center; margin-bottom:20px;"><div class="modal-time-group" style="display:flex; flex-direction:column; align-items:center; gap:4px;"><label style="font-size:.7rem; text-transform:uppercase; letter-spacing:1px; color:#928374;">H</label><input type="number" id="tmH" min="0" max="99" value="0" class="glass-input" style="width:85px;"></div><span class="modal-sep" style="font-size:1.6rem; font-weight:700;">:</span><div class="modal-time-group" style="display:flex; flex-direction:column; align-items:center; gap:4px;"><label style="font-size:.7rem; text-transform:uppercase; letter-spacing:1px; color:#928374;">M</label><input type="number" id="tmM" min="0" max="59" value="5" class="glass-input" style="width:85px;"></div><span class="modal-sep" style="font-size:1.6rem; font-weight:700;">:</span><div class="modal-time-group" style="display:flex; flex-direction:column; align-items:center; gap:4px;"><label style="font-size:.7rem; text-transform:uppercase; letter-spacing:1px; color:#928374;">S</label><input type="number" id="tmS" min="0" max="59" value="0" class="glass-input" style="width:85px;"></div></div><div class="modal-btns"><button class="btn-save" id="tmStartBtn" style="background:#8ec07c;">START</button><button class="btn-cancel" id="tmCancelBtn">CANCEL</button></div></div>`;
   document.body.appendChild(timerModalEl);
   setTimeout(()=>timerModalEl.querySelector('#tmNameInput').focus(),100);
   timerModalEl.querySelector('#tmStartBtn').onclick=()=>{const h=parseInt(document.getElementById('tmH').value)||0,m=parseInt(document.getElementById('tmM').value)||0,s=parseInt(document.getElementById('tmS').value)||0;if(h===0&&m===0&&s===0){showToast('Set a time > 0.','error');return;}const name=document.getElementById('tmNameInput').value.trim();TimerManager.create(h*3600+m*60+s,name||null);closeTimerModal();};
@@ -627,7 +708,7 @@ document.addEventListener('touchend',()=>{if(dragTarget){dragTarget.classList.re
 // ════════════════════════════════════════
 // INITIALIZATION & EVENT BINDINGS
 // ════════════════════════════════════════
-loadData(); CookieStore.updateStatusUI(); showCookieBanner(); renderTasks(); TimerManager.init(); setInterval(tick,1000);
+loadData(); CookieStore.updateStatusUI(); showCookieBanner(); renderTasks(); TimerManager.init(); window._clockAnim=new AnimatedTimeDisplay('appClock','00:00:00');window._taskCountdownDisplays=new Map();setInterval(tick,1000);
 
 const now=new Date(), pad=n=>String(n).padStart(2,'0');
 document.getElementById('tmTaskDeadline').min=`${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
